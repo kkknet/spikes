@@ -16,3 +16,17 @@
     </choose>
   </when>
 </choose>
+
+
+<choose>
+    <when condition="@(DateTime.TryParseExact(context.Request.Url.Query.GetValueOrDefault("dateParam"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))">
+        <!-- Valid date format (yyyy-MM-dd) -->
+    </when>
+    <otherwise>
+        <return-response>
+            <set-status code="400" reason="Bad Request" />
+            <set-body>Invalid date format for the parameter. Expected format: yyyy-MM-dd.</set-body>
+        </return-response>
+    </otherwise>
+</choose>
+

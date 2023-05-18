@@ -19,7 +19,7 @@
 
 
 <choose>
-    <when condition="@(DateTime.TryParseExact(context.Request.Url.Query.GetValueOrDefault("dateParam"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))">
+    <when condition="@(Regex.IsMatch(context.Request.Url.Query.GetValueOrDefault("dateParam"), @"^\d{4}-\d{2}-\d{2}$"))">
         <!-- Valid date format (yyyy-MM-dd) -->
     </when>
     <otherwise>
@@ -29,4 +29,3 @@
         </return-response>
     </otherwise>
 </choose>
-

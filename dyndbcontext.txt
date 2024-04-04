@@ -1,0 +1,71 @@
+In Entity Framework Core 8, dynamically loading DbContext for different databases at runtime can be very useful, especially when you need to connect to multiple databases or switch between them based on runtime conditions. This can be achieved through a combination of configuration, dependency injection, and possibly factory patterns. Below is a generalized approach to accomplish this:
+
+Step 1: Define Database Configuration
+
+First, define a configuration that can hold connection strings or other relevant parameters for connecting to your different databases. You might store these in appsettings.json, for example:
+
+{
+  "ConnectionStrings": {
+    "DatabaseA": "Server=(localdb)\\mssqllocaldb;Database=DbA;Trusted_Connection=True;",
+    "DatabaseB": "Server=(localdb)\\mssqllocaldb;Database=DbB;Trusted_Connection=True;"
+  }
+}
+
+Step 2: Implement a DbContext Factory
+
+Create a factory that can create instances of your DbContext with the appropriate database connection string:
+
+public interface IDbContextFactory
+{
+    MyDbContext CreateDbContext(string key);
+}
+
+public class DbContextFactory : IDbContextFactory
+{
+    private readonly IConfiguration _configuration;
+
+    public DbContextFactory(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+
+    public MyDbContext CreateDbContext(string key)
+    {
+        var optionsBuilder = new DbContextOptionsBuilder<MyDbContext>();
+        optionsBuilder.UseSqlServer(_configuration.GetConnectionString(key));
+
+        return new MyDbContext(optionsBuilder.Options);
+    }
+}
+
+Step 3: Configure Dependency Injection
+
+Register the factory and DbContext in your DI container in the Startup.cs or wherever you configure services:
+
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddSingleton<IDbContextFactory, DbContextFactory>();
+    // Other service registrations...
+}
+
+Step 4: Using the DbContext Dynamically
+
+Inject the IDbContextFactory wherever you need to use the DbContext, and use it to create an instance of your DbContext for the desired database:
+
+public class MyService
+{
+    private readonly IDbContextFactory _dbContextFactory;
+
+    public MyService(IDbContextFactory dbContextFactory)
+    {
+        _dbContextFactory = dbContextFactory;
+    }
+
+    public void DoWork()
+    {
+        using var context = _dbContextFactory.CreateDbContext("DatabaseA");
+        // Work with context...
+    }
+}
+
+This pattern allows you to dynamically select and load the appropriate database context at runtime based on your application’s needs. Note that this approach assumes you have a common DbContext (MyDbContext in this case) that can be used with multiple databases. If the schema differs significantly across databases, you might need to adapt this pattern to use multiple DbContext types or employ a strategy pattern to handle the differences in schema.

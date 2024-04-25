@@ -1,0 +1,24 @@
+public async Task<List<(string MessageData, string FileType)>> GetAuditDataAsync(
+    ApplicationDbContext context, string facility, string messageType, string messageControlId, string batchFileName)
+{
+    // Query for the first condition set
+    var firstPart = context.AuditInstances
+        .Where(a => a.SendingFacility == facility && a.MessageType == messageType && a.MessageControlID == messageControlId)
+        .Join(context.Stages, a => a.StageID, s => s.ID, (a, s) => new { a, s })
+        .GroupBy(x => x.s.Name)
+        .Select(g => g.OrderByDescending(x => x.a.AuditDate).FirstOrDefault())
+        .Select(x => new { x.a.MessageData, x.s.FileType });
+
+    // Query for the second condition set
+    var secondPart = context.AuditInstances
+        .Where(a => a.Stage.TriggerEvent == batchFileName)
+        .Join(context.Stages, a => a.StageID, s => s.ID, (a, s) => new { a, s })
+        .GroupBy(x => x.s.Name)
+        .Select(g => g.OrderByDescending(x => x.a.AuditDate).FirstOrDefault())
+        .Select(x => new { x.a.MessageData, x.s.FileType });
+
+    // Union and execution
+    var combinedResults = firstPart.Union(secondPart);
+
+    return await combinedResults.Select(x => (x.MessageData, x.FileType)).ToListAsync();
+}

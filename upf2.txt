@@ -1,0 +1,107 @@
+import React, { useState } from 'react';
+import { Box, Button, IconButton, List, ListItem, ListItemText, ListItemSecondaryAction, Typography, Divider, Paper } from '@mui/material';
+import ClearIcon from '@mui/icons-material/Clear';
+
+const MultipleFileSelection: React.FC = () => {
+  const [policyFiles, setPolicyFiles] = useState<File[]>([]);
+  const [quoteFiles, setQuoteFiles] = useState<File[]>([]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, setType: React.Dispatch<React.SetStateAction<File[]>>, maxFiles: number) => {
+    if (event.target.files) {
+      const selectedFiles = Array.from(event.target.files);
+      if (selectedFiles.length + (setType === setPolicyFiles ? policyFiles.length : quoteFiles.length) <= maxFiles) {
+        setType(prevFiles => [...prevFiles, ...selectedFiles]);
+      } else {
+        alert(`You can only add a maximum of ${maxFiles} files.`);
+      }
+    }
+  };
+
+  const handleDelete = (index: number, setType: React.Dispatch<React.SetStateAction<File[]>>) => {
+    setType(prevFiles => prevFiles.filter((_, i) => i !== index));
+  };
+
+  const handleClearAll = () => {
+    setPolicyFiles([]);
+    setQuoteFiles([]);
+  };
+
+  return (
+    <Paper elevation={3} style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+      <Typography variant="h6" gutterBottom>Create Comparison</Typography>
+      <Box mb={2} border={1} borderColor="grey.300" borderRadius={1} p={2}>
+        <Typography variant="body1">Policy</Typography>
+        <Typography variant="body2">Maximum of 1 policy allowed</Typography>
+        <input
+          accept=".pdf,.doc,.docx"
+          style={{ display: 'none' }}
+          id="policy-file-input"
+          type="file"
+          onChange={(event) => handleFileChange(event, setPolicyFiles, 1)}
+        />
+        <label htmlFor="policy-file-input">
+          <Button variant="contained" component="span" disabled={policyFiles.length >= 1} style={{ margin: '10px 0' }}>
+            Choose File
+          </Button>
+        </label>
+        <List>
+          {policyFiles.map((file, index) => (
+            <ListItem key={index}>
+              <ListItemText primary={file.name} />
+              <ListItemSecondaryAction>
+                <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(index, setPolicyFiles)}>
+                  <ClearIcon />
+                </IconButton>
+              </ListItemSecondaryAction>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+
+      <Divider />
+
+      <Box mt={2} mb={2} border={1} borderColor="grey.300" borderRadius={1} p={2}>
+        <Typography variant="body1">Quote(s)</Typography>
+        <Typography variant="body2">Maximum of 5 quotes allowed</Typography>
+        <input
+          accept=".pdf,.doc,.docx"
+          style={{ display: 'none' }}
+          id="quote-file-input"
+          multiple
+          type="file"
+          onChange={(event) => handleFileChange(event, setQuoteFiles, 5)}
+        />
+        <label htmlFor="quote-file-input">
+          <Button variant="contained" component="span" disabled={quoteFiles.length >= 5} style={{ margin: '10px 0' }}>
+            Choose File
+          </Button>
+        </label>
+        <List>
+          {quoteFiles.map((file, index) => (
+            <ListItem key={index}>
+              <ListItemText primary={file.name} />
+              <ListItemSecondaryAction>
+                <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(index, setQuoteFiles)}>
+                  <ClearIcon />
+                </IconButton>
+              </ListItemSecondaryAction>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+
+      <Divider />
+
+      <Box display="flex" justifyContent="space-between" mt={2}>
+        <Button variant="outlined" onClick={handleClearAll}>
+          Clear All
+        </Button>
+        <Button variant="contained" color="primary" disabled={policyFiles.length === 0 && quoteFiles.length === 0}>
+          Generate comparison
+        </Button>
+      </Box>
+    </Paper>
+  );
+};
+
+export default MultipleFileSelection;

@@ -1,0 +1,149 @@
+Certainly! Here is a TypeScript example demonstrating how to store user information in session storage, check it while navigating between components, and handle time expiration in a React 18 application.
+
+1. **Storing User Info in Session Storage**
+
+   ```typescript
+   // utils/sessionStorage.ts
+   export const setUserInfo = (userInfo: any, expirationMinutes: number) => {
+     const now = new Date();
+     const expirationTime = now.getTime() + expirationMinutes * 60000;
+     const item = {
+       userInfo,
+       expirationTime
+     };
+     sessionStorage.setItem('userInfo', JSON.stringify(item));
+   };
+
+   export const getUserInfo = () => {
+     const itemStr = sessionStorage.getItem('userInfo');
+     if (!itemStr) {
+       return null;
+     }
+     const item = JSON.parse(itemStr);
+     const now = new Date();
+     if (now.getTime() > item.expirationTime) {
+       sessionStorage.removeItem('userInfo');
+       return null;
+     }
+     return item.userInfo;
+   };
+   ```
+
+2. **Using the Utility Functions in a React Component**
+
+   ```typescript
+   // App.tsx
+   import React, { useEffect, useState } from 'react';
+   import { setUserInfo, getUserInfo } from './utils/sessionStorage';
+
+   const App: React.FC = () => {
+     const [user, setUser] = useState<any>(null);
+
+     useEffect(() => {
+       // Simulate fetching user data and storing it in session storage
+       const userData = { name: 'John Doe', age: 30 }; // Example user data
+       setUserInfo(userData, 30); // Set user data with 30 minutes expiration
+     }, []);
+
+     useEffect(() => {
+       const userInfo = getUserInfo();
+       if (userInfo) {
+         setUser(userInfo);
+       }
+     }, []);
+
+     return (
+       <div>
+         {user ? (
+           <div>
+             <h1>Welcome, {user.name}</h1>
+             <p>Age: {user.age}</p>
+           </div>
+         ) : (
+           <h1>User info expired or not set</h1>
+         )}
+       </div>
+     );
+   };
+
+   export default App;
+   ```
+
+3. **Navigating Between Components**
+
+   ```typescript
+   // NavComponent.tsx
+   import React from 'react';
+   import { Link } from 'react-router-dom';
+   import { getUserInfo } from './utils/sessionStorage';
+
+   const NavComponent: React.FC = () => {
+     const userInfo = getUserInfo();
+
+     return (
+       <nav>
+         <ul>
+           <li><Link to="/">Home</Link></li>
+           {userInfo && (
+             <>
+               <li><Link to="/profile">Profile</Link></li>
+               <li><Link to="/dashboard">Dashboard</Link></li>
+             </>
+           )}
+         </ul>
+       </nav>
+     );
+   };
+
+   export default NavComponent;
+   ```
+
+4. **Setting Up Routing**
+
+   ```typescript
+   // index.tsx
+   import React from 'react';
+   import ReactDOM from 'react-dom/client';
+   import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+   import App from './App';
+   import NavComponent from './NavComponent';
+   import Profile from './Profile';
+   import Dashboard from './Dashboard';
+
+   const Root: React.FC = () => (
+     <Router>
+       <NavComponent />
+       <Routes>
+         <Route path="/" element={<App />} />
+         <Route path="/profile" element={<Profile />} />
+         <Route path="/dashboard" element={<Dashboard />} />
+       </Routes>
+     </Router>
+   );
+
+   ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(<Root />);
+   ```
+
+   ```typescript
+   // Profile.tsx
+   import React from 'react';
+
+   const Profile: React.FC = () => {
+     return <h1>Profile Page</h1>;
+   };
+
+   export default Profile;
+   ```
+
+   ```typescript
+   // Dashboard.tsx
+   import React from 'react';
+
+   const Dashboard: React.FC = () => {
+     return <h1>Dashboard Page</h1>;
+   };
+
+   export default Dashboard;
+   ```
+
+This setup ensures that user information is stored in session storage with an expiration time. The `getUserInfo` function checks the expiration before returning the user data. The navigation component (`NavComponent`) and other parts of the application use this information to conditionally render content based on whether the user information is still valid.

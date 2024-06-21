@@ -1,0 +1,104 @@
+import React from 'react';
+import {
+  Container,
+  Box,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
+  IconButton,
+  Paper,
+  Button,
+  TextField,
+} from '@mui/material';
+import DownloadIcon from '@mui/icons-material/Download';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+
+const quoteComparisons = [
+  { name: 'Comparison #3', dateCreated: 'January 21, 2024' },
+  { name: 'Comparison #2', dateCreated: 'January 20, 2024' },
+  { name: 'Comparison #1', dateCreated: 'January 19, 2024' },
+];
+
+const CreateComparison: React.FC = () => {
+  return (
+    <Container>
+      <Box display="flex" justifyContent="space-between" my={4}>
+        <Typography variant="h4">Quote Comparisons</Typography>
+      </Box>
+      <Paper>
+        <List>
+          {quoteComparisons.map((comparison) => (
+            <ListItem key={comparison.name}>
+              <ListItemText
+                primary={comparison.name}
+                secondary={comparison.dateCreated}
+              />
+              <ListItemSecondaryAction>
+                <IconButton edge="end">
+                  <DownloadIcon />
+                </IconButton>
+              </ListItemSecondaryAction>
+            </ListItem>
+          ))}
+        </List>
+      </Paper>
+
+      <Box my={4}>
+        <Typography variant="h5">Create Comparison</Typography>
+        <Box my={2}>
+          <Button
+            variant="contained"
+            component="label"
+            startIcon={<UploadFileIcon />}
+          >
+            Choose File
+            <input type="file" hidden />
+          </Button>
+        </Box>
+
+        <Typography variant="subtitle1">Policy</Typography>
+        <Box display="flex" alignItems="center" my={1}>
+          <TextField
+            fullWidth
+            variant="outlined"
+            margin="normal"
+            InputProps={{ readOnly: true }}
+            value="ThisIs_theFilename_012543.pdf"
+          />
+          <Button variant="contained" color="secondary" sx={{ ml: 1 }}>
+            X
+          </Button>
+        </Box>
+
+        <Typography variant="subtitle1">Quote(s)</Typography>
+        {Array.from({ length: 5 }, (_, index) => (
+          <Box key={index} display="flex" alignItems="center" my={1}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              margin="normal"
+              InputProps={{ readOnly: true }}
+              value={`ThisIs_theFilenameAgainADuplicate_${index + 1}_012543.pdf`}
+            />
+            <Button variant="contained" color="secondary" sx={{ ml: 1 }}>
+              X
+            </Button>
+          </Box>
+        ))}
+
+        <Box display="flex" justifyContent="space-between" my={2}>
+          <Button variant="outlined" color="primary">
+            Clear All
+          </Button>
+          <Button variant="contained" color="primary">
+            Generate Comparison
+          </Button>
+        </Box>
+      </Box>
+    </Container>
+  );
+};
+
+export default CreateComparison;

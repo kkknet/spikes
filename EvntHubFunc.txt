@@ -2,22 +2,21 @@ using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Azure.Storage.Blobs;
 using Microsoft.Azure.EventHubs;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
 
 public static class EventHubToBlobFunction
 {
-    private static CloudBlobContainer _cloudBlobContainer;
+    private static readonly string BlobConnectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+    private static readonly string BlobContainerName = "eventhub-blobs";
+    private static readonly BlobServiceClient BlobServiceClient = new BlobServiceClient(BlobConnectionString);
+    private static readonly BlobContainerClient BlobContainerClient = BlobServiceClient.GetBlobContainerClient(BlobContainerName);
 
     static EventHubToBlobFunction()
     {
-        var storageAccount = CloudStorageAccount.Parse(Environment.GetEnvironmentVariable("AzureWebJobsStorage"));
-        var blobClient = storageAccount.CreateCloudBlobClient();
-        _cloudBlobContainer = blobClient.GetContainerReference("eventhub-blobs");
-        _cloudBlobContainer.CreateIfNotExistsAsync().Wait();
+        BlobContainerClient.CreateIfNotExists();
     }
 
     [FunctionName("EventHubToBlobFunction")]
@@ -35,10 +34,11 @@ public static class EventHubToBlobFunction
     private static async Task WriteToBlobStorage(string message)
     {
         string blobName = $"event-{Guid.NewGuid()}.txt";
-        CloudBlockBlob cloudBlockBlob = _cloudBlobContainer.GetBlockBlobReference(blobName);
+        BlobClient blobClient = BlobContainerClient.GetBlobClient(blobName);
+
         using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(message), writable: false))
         {
-            await cloudBlockBlob.UploadFromStreamAsync(stream);
+            await blobClient.UploadAsync(stream);
         }
     }
 }

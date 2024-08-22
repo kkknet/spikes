@@ -1,0 +1,53 @@
+import React from 'react';
+import { Box, Typography, Button, AppBar, Toolbar } from '@mui/material';
+
+const QuoteComparisonPage: React.FC = () => {
+  return (
+    <Box>
+      {/* AppBar for the top navigation */}
+      <AppBar position="static" color="primary">
+        <Toolbar>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
+            U Compare
+          </Typography>
+          <Button color="inherit">Change client</Button>
+        </Toolbar>
+      </AppBar>
+
+      {/* Main content */}
+      <Box p={2}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          {/* Left side information */}
+          <Box>
+            <Typography variant="h6">Company Name</Typography>
+            <Typography variant="body1">ABC Widget Design</Typography>
+          </Box>
+
+          {/* Middle information */}
+          <Box>
+            <Typography variant="h6">Industry</Typography>
+            <Typography variant="body1">Manufacturing</Typography>
+          </Box>
+
+          {/* Right side information */}
+          <Box>
+            <Typography variant="h6">Subvertical</Typography>
+            <Typography variant="body1">Wholesale Machinery & Equipment</Typography>
+          </Box>
+        </Box>
+
+        {/* Bottom section for quote comparison options */}
+        <Box mt={4}>
+          <Typography variant="h4" gutterBottom>
+            Quote Comparisons
+          </Typography>
+          <Button variant="contained" color="primary">
+            Create Comparison
+          </Button>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
+export default QuoteComparisonPage;

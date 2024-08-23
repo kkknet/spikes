@@ -1,0 +1,6 @@
+AzureDiagnostics
+| where ResourceType == "API Management"
+| summarize totalRequests = count() by bin(TimeGenerated, 1mo)
+| where TimeGenerated >= startofmonth(now(), -12) and TimeGenerated < startofmonth(now())
+| project Month = format_datetime(TimeGenerated, "yyyy-MM"), totalRequests
+| order by Month asc

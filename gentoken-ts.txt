@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+no import * as fs from 'fs';
 import * as jwt from 'jsonwebtoken';
 import axios from 'axios';
 
@@ -105,4 +105,59 @@ const certPath = 'path/to/your/public_cert.crt';
 // Generate x5t from the certificate
 const x5t = generateX5tFromCert(certPath);
 
+console.log('Generated x5t:', x5t)
+
+
+
+
+
+
+
+
+
+
+import * as fs from 'fs';
+import * as crypto from 'crypto';
+
+// Helper function to remove the PEM header/footer
+function cleanPem(pem: string): string {
+    return pem
+        .replace(/-----BEGIN CERTIFICATE-----/g, '')
+        .replace(/-----END CERTIFICATE-----/g, '')
+        .replace(/\n/g, '');
+}
+
+// Helper function for Base64 URL encoding (no padding, replacing + with -, and / with _)
+function base64UrlEncode(buffer: Buffer): string {
+    return buffer.toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, ''); // Remove padding '=' characters
+}
+
+// Function to generate the x5t (Base64 URL-encoded SHA-1 hash of the certificate)
+function generateX5tFromCert(certPath: string): string {
+    // Read the certificate from the file
+    const cert = fs.readFileSync(certPath, 'utf8');
+
+    // Clean the PEM format to get the actual Base64-encoded content
+    const certContent = cleanPem(cert);
+
+    // Convert the Base64 content to a binary buffer
+    const certBuffer = Buffer.from(certContent, 'base64');
+
+    // Compute the SHA-1 hash of the certificate's binary content
+    const sha1Hash = crypto.createHash('sha1').update(certBuffer).digest();
+
+    // Return the Base64 URL-encoded hash as x5t
+    return base64UrlEncode(sha1Hash);
+}
+
+// Path to your certificate (public certificate .crt or .pem file)
+const certPath = 'path/to/your/public_cert.crt';
+
+// Generate the x5t (Base64 URL-encoded SHA-1 thumbprint)
+const x5t = generateX5tFromCert(certPath);
+
 console.log('Generated x5t:', x5t);
+

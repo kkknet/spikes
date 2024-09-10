@@ -1,0 +1,63 @@
+import * as fs from 'fs';
+import * as jwt from 'jsonwebtoken';
+import axios from 'axios';
+
+// Azure AD B2C configuration
+const tenantName = "<YOUR_TENANT_NAME>"; // e.g., "yourtenant"
+const clientId = "<YOUR_CLIENT_ID>"; // Client ID of the registered application
+const tokenEndpoint = `https://${tenantName}.b2clogin.com/${tenantName}.onmicrosoft.com/oauth2/v2.0/token?p=<YOUR_POLICY_NAME>`; // Policy endpoint
+const audience = `https://${tenantName}.b2clogin.com/${tenantName}.onmicrosoft.com/<YOUR_POLICY_NAME>`; // Replace with your tenant and policy details
+
+// Paths to certificate files
+const privateKeyPath = "path/to/private_key.pem";
+const publicKeyPath = "path/to/public_cert.crt";
+
+// Read private key
+const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+
+// JWT Payload
+const payload = {
+    aud: tokenEndpoint, // The audience (Azure token endpoint)
+    iss: clientId,      // Client ID as issuer
+    sub: clientId,      // The subject, which is also the client ID
+    jti: Math.random().toString(36).substring(7), // A unique identifier for the token
+    nbf: Math.floor(Date.now() / 1000),           // Token is valid from current time
+    exp: Math.floor(Date.now() / 1000) + 60 * 60, // Token expiration (1 hour)
+};
+
+// Generate JWT Token using private key
+const token = jwt.sign(payload, privateKey, {
+    algorithm: 'RS256',
+    keyid: "<THUMBPRINT_OF_YOUR_CERTIFICATE>", // The certificate thumbprint
+    header: {
+        alg: "RS256",
+        typ: "JWT",
+        x5t: "<THUMBPRINT_OF_YOUR_CERTIFICATE>", // Thumbprint of the certificate
+    }
+});
+
+// Request body for token request
+const requestBody = new URLSearchParams({
+    client_id: clientId,
+    scope: "https://<YOUR_TENANT_NAME>.onmicrosoft.com/api/.default", // Replace with your scope
+    client_assertion: token, // The JWT token as client_assertion
+    client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+    grant_type: "client_credentials",
+});
+
+// Function to acquire access token
+async function acquireToken() {
+    try {
+        const response = await axios.post(tokenEndpoint, requestBody.toString(), {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+        });
+        console.log("Access token:", response.data.access_token);
+    } catch (error) {
+        console.error("Error acquiring token:", error.response?.data || error.message);
+    }
+}
+
+// Call the function to get the token
+acquireToken();

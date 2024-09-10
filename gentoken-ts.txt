@@ -61,3 +61,48 @@ async function acquireToken() {
 
 // Call the function to get the token
 acquireToken();
+
+
+
+
+
+
+
+import * as fs from 'fs';
+import * as crypto from 'crypto';
+
+// Function to remove PEM header/footer from certificate
+function cleanPem(pem: string): string {
+    return pem
+        .replace(/-----BEGIN CERTIFICATE-----/g, '')
+        .replace(/-----END CERTIFICATE-----/g, '')
+        .replace(/\n/g, '');
+}
+
+// Function to generate the x5t (Base64-encoded SHA-1 hash of the certificate)
+function generateX5tFromCert(certPath: string): string {
+    // Read the certificate
+    const cert = fs.readFileSync(certPath, 'utf8');
+    
+    // Clean the PEM format to get the actual certificate content
+    const certContent = cleanPem(cert);
+    
+    // Convert certificate content from Base64 to a buffer
+    const certBuffer = Buffer.from(certContent, 'base64');
+    
+    // Generate the SHA-1 hash of the certificate
+    const sha1Hash = crypto.createHash('sha1').update(certBuffer).digest();
+    
+    // Base64 encode the SHA-1 hash to get x5t
+    const x5t = sha1Hash.toString('base64');
+    
+    return x5t;
+}
+
+// Path to your certificate (public certificate .crt file)
+const certPath = 'path/to/your/public_cert.crt';
+
+// Generate x5t from the certificate
+const x5t = generateX5tFromCert(certPath);
+
+console.log('Generated x5t:', x5t);

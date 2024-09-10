@@ -161,3 +161,89 @@ const x5t = generateX5tFromCert(certPath);
 
 console.log('Generated x5t:', x5t);
 
+
+
+
+
+
+import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import forge from 'node-forge';
+import fetch from 'node-fetch';
+
+// Your tenant, application ID, and scope
+const tenantName = '<your tenant name>.onmicrosoft.com';
+const appId = '<your application id>';
+const scope = '<Resource URI>'; // Example: 'https://graph.microsoft.com/.default'
+
+// Load your certificate (self-signed cert)
+const certPath = '<path to your certificate file>';
+const cert = fs.readFileSync(certPath, 'utf-8');
+
+// Get certificate fingerprint (base64url encoding)
+const pkiCert = forge.pki.certificateFromPem(cert);
+const certHash = forge.util.encode64(pkiCert.md.sha1().digest().bytes())
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+// Create JWT timestamps for expiration and not before
+const nowInSeconds = Math.floor(Date.now() / 1000);
+const expirationTime = nowInSeconds + (2 * 60); // 2 minutes validity
+const notBefore = nowInSeconds;
+
+// JWT header
+const header = {
+    alg: 'RS256',
+    typ: 'JWT',
+    x5t: certHash,
+};
+
+// JWT payload
+const payload = {
+    aud: `https://login.microsoftonline.com/${tenantName}/oauth2/token`,
+    exp: expirationTime,
+    iss: appId,
+    jti: forge.util.bytesToHex(forge.random.getBytesSync(16)), // Random GUID
+    nbf: notBefore,
+    sub: appId,
+};
+
+// Load the private key for signing the JWT
+const privateKeyPath = '<path to your private key file>'; // Should match the certificate
+const privateKey = fs.readFileSync(privateKeyPath, 'utf-8');
+
+// Sign the JWT with RS256
+const token = jwt.sign(payload, privateKey, {
+    algorithm: 'RS256',
+    header: header,
+    expiresIn: '2m', // 2 minutes
+});
+
+// Create the body of the POST request
+const body = new URLSearchParams({
+    client_id: appId,
+    client_assertion: token,
+    client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+    scope: scope,
+    grant_type: 'client_credentials',
+});
+
+// Define the URL for token request
+const url = `https://login.microsoftonline.com/${tenantName}/oauth2/v2.0/token`;
+
+// Make the POST request using fetch
+async function getAccessToken() {
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body.toString(),
+    });
+
+    const data = await response.json();
+    console.log('Access Token:', data.access_token);
+}
+
+getAccessToken().catch(err => console.error('Error fetching access token:', err));

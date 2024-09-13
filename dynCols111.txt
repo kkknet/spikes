@@ -1,0 +1,88 @@
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Linq;
+using System.Text.Json;
+
+// Define the entity representing your table
+public class MyEntity
+{
+    public int Id { get; set; }
+    public string JsonColumn { get; set; }
+}
+
+// Define a model to hold the flattened JSON data
+[Keyless]
+public class FlatData
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Value { get; set; }
+}
+
+// Define your DbContext
+public class MyDbContext : DbContext
+{
+    public DbSet<MyEntity> MyEntities { get; set; }
+    public DbSet<FlatData> FlatDatas { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        // Replace with your actual connection string
+        optionsBuilder.UseSqlServer("YourConnectionString");
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Configure FlatData as a keyless entity
+        modelBuilder.Entity<FlatData>().HasNoKey();
+    }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        using (var context = new MyDbContext())
+        {
+            // Step 1: Execute a SQL query to extract Id, Name, and Value without hardcoding 'Name' values
+            var flatData = context.FlatDatas.FromSqlRaw(@"
+                SELECT
+                    t.Id,
+                    JSON_VALUE(c.value, '$.Name') AS Name,
+                    JSON_VALUE(c.value, '$.Value') AS Value
+                FROM 
+                    MyEntities t
+                CROSS APPLY 
+                    OPENJSON(t.JsonColumn, '$.FieldValues.Field') AS c
+            ").ToList();
+
+            // Step 2: Group the data by Id and dynamically create objects
+            var groupedData = flatData
+                .GroupBy(f => f.Id)
+                .Select(g =>
+                {
+                    dynamic obj = new ExpandoObject();
+                    var dict = (IDictionary<string, object>)obj;
+                    dict["Id"] = g.Key;
+                    foreach (var item in g)
+                    {
+                        dict[item.Name] = item.Value;
+                    }
+                    return obj;
+                })
+                .ToList();
+
+            // Output the results
+            foreach (var item in groupedData)
+            {
+                foreach (var kvp in (IDictionary<string, object>)item)
+                {
+                    Console.Write($"{kvp.Key}: {kvp.Value}, ");
+                }
+                Console.WriteLine();
+            }
+        }
+    }
+}

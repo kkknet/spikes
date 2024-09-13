@@ -1,0 +1,242 @@
+Certainly! To combine the return object from parsing the JSON data with another existing object and create one final object, you can follow these steps:
+
+1. **Retrieve or define your existing object.**
+2. **Parse the JSON data into dynamic properties.**
+3. **Combine both sets of properties into a single object.**
+
+Below, I'll provide detailed explanations and code examples to illustrate how you can achieve this using C# with .NET Core and Entity Framework Core.
+
+---
+
+### **Assumptions:**
+
+- You have an existing object (let's call it `ExistingEntity`) with its own set of properties.
+- You have JSON data stored in a column (as per your initial requirement).
+- You want to combine the properties of `ExistingEntity` with the dynamic properties extracted from the JSON data.
+
+### **Step-by-Step Guide:**
+
+#### **1. Define Your Existing Entity**
+
+Let's assume you have an existing entity class:
+
+```csharp
+public class ExistingEntity
+{
+    public int Id { get; set; }
+    public string SomeProperty { get; set; }
+    // Add other properties as needed
+}
+```
+
+And you have it configured in your `DbContext`:
+
+```csharp
+public class MyDbContext : DbContext
+{
+    public DbSet<ExistingEntity> ExistingEntities { get; set; }
+    public DbSet<MyEntity> MyEntities { get; set; }
+    public DbSet<FlatData> FlatDatas { get; set; }
+
+    // ... (rest of your DbContext configuration)
+}
+```
+
+#### **2. Modify the Query to Include Both Entities**
+
+First, adjust your query to join `ExistingEntity` with `MyEntity` (which contains the JSON column):
+
+```csharp
+var flatData = context.FlatDatas.FromSqlRaw(@"
+    SELECT
+        e.Id,
+        e.SomeProperty,
+        JSON_VALUE(c.value, '$.Name') AS Name,
+        JSON_VALUE(c.value, '$.Value') AS Value
+    FROM 
+        ExistingEntities e
+    INNER JOIN 
+        MyEntities t ON e.Id = t.Id
+    CROSS APPLY 
+        OPENJSON(t.JsonColumn, '$.FieldValues.Field') AS c
+").ToList();
+```
+
+**Note:** Adjust the join condition (`ON e.Id = t.Id`) according to your actual database schema.
+
+#### **3. Group and Combine the Data**
+
+Now, group the data by `Id` and create dynamic objects that include both the existing properties and the dynamic properties from the JSON:
+
+```csharp
+var combinedData = flatData
+    .GroupBy(f => new { f.Id, f.SomeProperty })
+    .Select(g =>
+    {
+        dynamic obj = new ExpandoObject();
+        var dict = (IDictionary<string, object>)obj;
+
+        // Add existing entity properties
+        dict["Id"] = g.Key.Id;
+        dict["SomeProperty"] = g.Key.SomeProperty;
+
+        // Add dynamic properties from JSON
+        foreach (var item in g)
+        {
+            dict[item.Name] = item.Value;
+        }
+
+        return obj;
+    })
+    .ToList();
+```
+
+#### **4. Output the Results**
+
+Finally, iterate over the `combinedData` list and output the properties:
+
+```csharp
+foreach (var item in combinedData)
+{
+    var dict = (IDictionary<string, object>)item;
+    foreach (var kvp in dict)
+    {
+        Console.Write($"{kvp.Key}: {kvp.Value}, ");
+    }
+    Console.WriteLine();
+}
+```
+
+**Sample Output:**
+
+```
+Id: 1, SomeProperty: Value1, Visit: IN, Status: ADM, 
+Id: 2, SomeProperty: Value2, Visit: OUT, Status: DISCH, 
+```
+
+---
+
+### **Explanation:**
+
+#### **Combining Existing Properties with Dynamic Properties:**
+
+- **Existing Entity Properties:**
+  - We use `f.Id` and `f.SomeProperty` from the `ExistingEntity`.
+  - These are known properties that we can directly access.
+
+- **Dynamic JSON Properties:**
+  - We extract `Name` and `Value` from the JSON data.
+  - Since the `Name` values are dynamic, we can't define them in a static class.
+
+- **Grouping Data:**
+  - We group by the existing entity's properties to consolidate all dynamic properties under each `Id`.
+
+- **Creating Dynamic Objects:**
+  - We use `ExpandoObject` to create an object whose properties can be set at runtime.
+  - We add both the existing entity's properties and the dynamic properties into this object.
+
+#### **Advantages of This Approach:**
+
+- **No Hardcoding of Property Names:**
+  - You don't need to know the `"Name"` values in advance.
+  - The code dynamically handles any `"Name"` values present in the JSON.
+
+- **Unified Data Object:**
+  - The final object contains both sets of properties, allowing you to work with a single data structure.
+
+- **Flexibility:**
+  - Easily adaptable to changes in the JSON structure or the existing entity.
+
+### **Alternative Approach: Parsing JSON in C#**
+
+If your SQL Server version doesn't support `OPENJSON`, or you prefer to parse JSON in C#, you can adjust the code accordingly.
+
+#### **Retrieve Data from the Database**
+
+First, retrieve both the existing entities and the JSON data:
+
+```csharp
+var data = context.ExistingEntities
+    .Include(e => e.MyEntity) // Assuming a navigation property exists
+    .ToList();
+```
+
+#### **Combine Data in C#**
+
+Now, parse the JSON and combine it with the existing entity properties:
+
+```csharp
+var combinedData = data.Select(e =>
+{
+    dynamic obj = new ExpandoObject();
+    var dict = (IDictionary<string, object>)obj;
+
+    // Add existing entity properties
+    dict["Id"] = e.Id;
+    dict["SomeProperty"] = e.SomeProperty;
+
+    // Parse JSON data
+    using (JsonDocument doc = JsonDocument.Parse(e.MyEntity.JsonColumn))
+    {
+        var fields = doc.RootElement.GetProperty("FieldValues").GetProperty("Field");
+        foreach (var field in fields.EnumerateArray())
+        {
+            var name = field.GetProperty("Name").GetString();
+            var value = field.GetProperty("Value").GetString();
+            dict[name] = value;
+        }
+    }
+
+    return obj;
+}).ToList();
+```
+
+#### **Output the Results**
+
+```csharp
+foreach (var item in combinedData)
+{
+    var dict = (IDictionary<string, object>)item;
+    foreach (var kvp in dict)
+    {
+        Console.Write($"{kvp.Key}: {kvp.Value}, ");
+    }
+    Console.WriteLine();
+}
+```
+
+### **Considerations:**
+
+- **Error Handling:**
+  - Ensure you handle exceptions that may occur during JSON parsing.
+  - Check for null values and missing properties.
+
+- **Performance:**
+  - Parsing JSON in C# can be less efficient for large datasets compared to SQL Server's `OPENJSON`.
+  - If performance is critical, consider using stored procedures or server-side processing.
+
+- **Type Safety:**
+  - Using dynamic objects means losing compile-time type checking.
+  - Be cautious when accessing properties to avoid runtime errors.
+
+- **Serialization:**
+  - If you need to serialize the combined data to JSON or another format, dynamic objects can be easily serialized using `System.Text.Json` or `Newtonsoft.Json`.
+
+### **Final Notes:**
+
+- **Extensibility:**
+  - This approach can handle any number of dynamic properties from the JSON data without code changes.
+  - If new fields are added to the JSON, they will automatically be included in the combined object.
+
+- **Adjustments:**
+  - Make sure to replace placeholders like `"YourConnectionString"` with actual values.
+  - Adjust table names, column names, and property names according to your database schema.
+
+- **Thread Safety:**
+  - `ExpandoObject` is not thread-safe. If you're working in a multi-threaded environment, ensure proper synchronization.
+
+---
+
+By following these steps, you can effectively combine the dynamically created object from your JSON data with another existing object to create one final, unified object containing all necessary properties.
+
+Let me know if you need further assistance or clarification on any of these steps!

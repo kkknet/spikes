@@ -1,0 +1,119 @@
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Linq;
+using System.Text.Json;
+
+public class ExistingEntity
+{
+    public int Id { get; set; }
+    public string SomeProperty { get; set; }
+    // Add other properties as needed
+}
+
+public class MyEntity
+{
+    public int Id { get; set; }
+    public string JsonColumn { get; set; }
+}
+
+[Keyless]
+public class FlatData
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Value { get; set; }
+}
+
+public class MyDbContext : DbContext
+{
+    public DbSet<ExistingEntity> ExistingEntities { get; set; }
+    public DbSet<MyEntity> MyEntities { get; set; }
+    public DbSet<FlatData> FlatDatas { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        // Replace with your actual connection string
+        optionsBuilder.UseSqlServer("YourConnectionString");
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Configure FlatData as a keyless entity
+        modelBuilder.Entity<FlatData>().HasNoKey();
+    }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        using (var context = new MyDbContext())
+        {
+            // Step 1: Retrieve the existing entities
+            var existingEntities = context.ExistingEntities.ToList();
+
+            // Step 2: Retrieve and parse the JSON data
+            var flatData = context.FlatDatas.FromSqlRaw(@"
+                SELECT
+                    t.Id,
+                    JSON_VALUE(c.value, '$.Name') AS Name,
+                    JSON_VALUE(c.value, '$.Value') AS Value
+                FROM 
+                    MyEntities t
+                CROSS APPLY 
+                    OPENJSON(t.JsonColumn, '$.FieldValues.Field') AS c
+            ").ToList();
+
+            // Step 3: Combine the data outside of the SQL query
+            var groupedJsonData = flatData
+                .GroupBy(f => f.Id)
+                .ToDictionary(
+                    g => g.Key,
+                    g =>
+                    {
+                        var dict = new Dictionary<string, string>();
+                        foreach (var item in g)
+                        {
+                            dict[item.Name] = item.Value;
+                        }
+                        return dict;
+                    });
+
+            // Step 4: Merge existing entities with parsed JSON data
+            var finalData = existingEntities.Select(e =>
+            {
+                dynamic obj = new ExpandoObject();
+                var dict = (IDictionary<string, object>)obj;
+
+                // Add properties from ExistingEntity
+                dict["Id"] = e.Id;
+                dict["SomeProperty"] = e.SomeProperty;
+                // Add other properties from ExistingEntity as needed
+
+                // Add properties from JSON data if available
+                if (groupedJsonData.TryGetValue(e.Id, out var jsonDict))
+                {
+                    foreach (var kvp in jsonDict)
+                    {
+                        dict[kvp.Key] = kvp.Value;
+                    }
+                }
+
+                return obj;
+            }).ToList();
+
+            // Step 5: Serialize finalData to JSON
+            var jsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true // For pretty-printing; optional
+            };
+
+            string jsonResult = JsonSerializer.Serialize(finalData, jsonOptions);
+
+            // Output the JSON string
+            Console.WriteLine(jsonResult);
+        }
+    }
+}

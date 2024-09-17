@@ -1,0 +1,73 @@
+using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Azure.Storage.Blobs;
+
+namespace BlobMoverFunction
+{
+    public static class MoveBlobFunction
+    {
+        [FunctionName("MoveBlob")]
+        public static async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req,
+            ILogger log)
+        {
+            log.LogInformation("Processing blob move request.");
+
+            // Retrieve parameters from the query string or request body
+            string sourceContainerName = req.Query["sourceContainer"];
+            string sourceBlobName = req.Query["sourceBlob"];
+            string destinationContainerName = req.Query["destinationContainer"];
+            string destinationBlobName = req.Query["destinationBlob"];
+
+            if (string.IsNullOrWhiteSpace(sourceContainerName) ||
+                string.IsNullOrWhiteSpace(sourceBlobName) ||
+                string.IsNullOrWhiteSpace(destinationContainerName) ||
+                string.IsNullOrWhiteSpace(destinationBlobName))
+            {
+                return new BadRequestObjectResult("Please provide sourceContainer, sourceBlob, destinationContainer, and destinationBlob parameters.");
+            }
+
+            try
+            {
+                // Get the connection string from application settings
+                string connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+
+                // Initialize Blob clients
+                BlobContainerClient sourceContainer = new BlobContainerClient(connectionString, sourceContainerName);
+                BlobClient sourceBlob = sourceContainer.GetBlobClient(sourceBlobName);
+
+                BlobContainerClient destinationContainer = new BlobContainerClient(connectionString, destinationContainerName);
+                BlobClient destinationBlob = destinationContainer.GetBlobClient(destinationBlobName);
+
+                // Ensure the destination container exists
+                await destinationContainer.CreateIfNotExistsAsync();
+
+                // Start the copy operation
+                var copyOperation = await destinationBlob.StartCopyFromUriAsync(sourceBlob.Uri);
+
+                // Wait for the copy to complete
+                while ((await destinationBlob.GetPropertiesAsync()).Value.CopyStatus == Azure.Storage.Blobs.Models.CopyStatus.Pending)
+                {
+                    await Task.Delay(500);
+                }
+
+                // Delete the source blob
+                await sourceBlob.DeleteAsync();
+
+                log.LogInformation($"Blob moved from {sourceBlobName} to {destinationBlobName}.");
+
+                return new OkObjectResult("Blob moved successfully.");
+            }
+            catch (Exception ex)
+            {
+                log.LogError($"Error moving blob: {ex.Message}");
+                return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            }
+        }
+    }
+}

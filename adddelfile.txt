@@ -1,0 +1,218 @@
+import React, { useState } from 'react';
+import {
+  Container,
+  Box,
+  Typography,
+  Grid,
+  Paper,
+  Button,
+  TextField,
+  IconButton,
+  LinearProgress,
+} from '@mui/material';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import DownloadIcon from '@mui/icons-material/Download';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import DeleteIcon from '@mui/icons-material/Delete';
+
+const quoteComparisons = [
+  { id: 1, name: 'Comparison #4', dateCreated: '45% Complete', download: 'file_url_4' },
+  { id: 2, name: 'Comparison #3', dateCreated: 'January 21, 2024', download: 'file_url_3' },
+  { id: 3, name: 'Comparison #2', dateCreated: 'January 20, 2024', download: '' },
+  { id: 4, name: 'Comparison #1', dateCreated: 'January 19, 2024', download: '' },
+];
+
+const columns: GridColDef[] = [
+  { field: 'name', headerName: 'Name', width: 200 },
+  {
+    field: 'dateCreated',
+    headerName: 'Date Created',
+    width: 200,
+    renderCell: (params) => (
+      params.value === '45% Complete' ? (
+        <Box width="100%">
+          <LinearProgress variant="determinate" value={45} />
+          <Typography variant="body2" color="textSecondary" align="center">
+            45% Complete
+          </Typography>
+        </Box>
+      ) : (
+        params.value
+      )
+    ),
+  },
+  {
+    field: 'download',
+    headerName: 'Download',
+    width: 100,
+    renderCell: (params) => (
+      <IconButton
+        disabled={!params.value}
+        sx={{
+          color: params.value ? 'blue' : 'grey',
+        }}
+        onClick={() => {
+          if (params.value) {
+            // Handle the download action here
+            console.log('Downloading:', params.value);
+          }
+        }}
+      >
+        <DownloadIcon />
+      </IconButton>
+    ),
+  },
+];
+
+const CreateComparison: React.FC = () => {
+  const [policyFile, setPolicyFile] = useState<File | null>(null);
+  const [quoteFiles, setQuoteFiles] = useState<File[]>([]);
+
+  const handlePolicyFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setPolicyFile(event.target.files[0]);
+    }
+  };
+
+  const handleQuoteFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const filesArray = Array.from(event.target.files);
+      setQuoteFiles(filesArray);
+    }
+  };
+
+  const handleClearAll = () => {
+    setPolicyFile(null);
+    setQuoteFiles([]);
+  };
+
+  const handleDeletePolicyFile = () => {
+    setPolicyFile(null);
+  };
+
+  const handleDeleteQuoteFile = (index: number) => {
+    setQuoteFiles(quoteFiles.filter((_, i) => i !== index));
+  };
+
+  const handleGenerateComparison = async () => {
+    const formData = new FormData();
+    if (policyFile) {
+      formData.append('policy', policyFile);
+    }
+    quoteFiles.forEach((file, index) => {
+      formData.append(`quote${index + 1}`, file);
+    });
+
+    try {
+      const response = await fetch('YOUR_API_ENDPOINT', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        console.log('Files successfully uploaded');
+      } else {
+        console.error('Failed to upload files');
+      }
+    } catch (error) {
+      console.error('Error uploading files:', error);
+    }
+  };
+
+  return (
+    <Container>
+      <Box display="flex" justifyContent="space-between" my={4}>
+        <Typography variant="h4">Quote Comparisons</Typography>
+      </Box>
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={6}>
+          <Paper>
+            <Box p={2} height={400}>
+              <DataGrid rows={quoteComparisons} columns={columns} pageSize={5} />
+            </Box>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={6}>
+          <Paper>
+            <Box p={2}>
+              <Typography variant="h5">Create Comparison</Typography>
+              <Box my={2}>
+                <Button
+                  variant="contained"
+                  component="label"
+                  startIcon={<UploadFileIcon />}
+                >
+                  Choose Policy File
+                  <input type="file" hidden onChange={handlePolicyFileChange} />
+                </Button>
+                {policyFile && (
+                  <Box mt={1} display="flex" alignItems="center">
+                    <TextField
+                      fullWidth
+                      variant="outlined"
+                      margin="normal"
+                      InputProps={{ readOnly: true }}
+                      value={policyFile.name}
+                    />
+                    <IconButton
+                      color="secondary"
+                      onClick={handleDeletePolicyFile}
+                      sx={{ ml: 1 }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                )}
+              </Box>
+
+              <Box my={2}>
+                <Button
+                  variant="contained"
+                  component="label"
+                  startIcon={<UploadFileIcon />}
+                >
+                  Choose Quote Files
+                  <input type="file" hidden multiple onChange={handleQuoteFilesChange} />
+                </Button>
+                {quoteFiles.length > 0 && (
+                  <Box mt={1}>
+                    {quoteFiles.map((file, index) => (
+                      <Box key={index} display="flex" alignItems="center" my={1}>
+                        <TextField
+                          fullWidth
+                          variant="outlined"
+                          margin="normal"
+                          InputProps={{ readOnly: true }}
+                          value={file.name}
+                        />
+                        <IconButton
+                          color="secondary"
+                          onClick={() => handleDeleteQuoteFile(index)}
+                          sx={{ ml: 1 }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+
+              <Box display="flex" justifyContent="space-between" my={2}>
+                <Button variant="outlined" color="primary" onClick={handleClearAll}>
+                  Clear All
+                </Button>
+                <Button variant="contained" color="primary" onClick={handleGenerateComparison}>
+                  Generate Comparison
+                </Button>
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
+    </Container>
+  );
+};
+
+export default CreateComparison;

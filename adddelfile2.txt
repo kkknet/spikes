@@ -80,7 +80,15 @@ const CreateComparison: React.FC = () => {
   const handleQuoteFilesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const filesArray = Array.from(event.target.files);
-      setQuoteFiles([...quoteFiles, ...filesArray]);
+      
+      // Filter out files that are already in the quoteFiles list
+      const uniqueFiles = filesArray.filter(
+        (newFile) => !quoteFiles.some((existingFile) => existingFile.name === newFile.name)
+      );
+
+      // Add new files to the quote files list (up to 8 files)
+      const newFiles = [...quoteFiles, ...uniqueFiles].slice(0, 8); // Limit to 8 files
+      setQuoteFiles(newFiles);
     }
   };
 
@@ -154,11 +162,14 @@ const CreateComparison: React.FC = () => {
           <Paper>
             <Box p={2}>
               <Typography variant="h5">Create Comparison</Typography>
+
+              {/* Policy File Upload */}
               <Box my={2}>
                 <Button
                   variant="contained"
                   component="label"
                   startIcon={<UploadFileIcon />}
+                  disabled={!!policyFile} // Disable if a policy file is already selected
                 >
                   Choose Policy File
                   <input
@@ -188,13 +199,15 @@ const CreateComparison: React.FC = () => {
                 )}
               </Box>
 
+              {/* Quote Files Upload */}
               <Box my={2}>
                 <Button
                   variant="contained"
                   component="label"
                   startIcon={<UploadFileIcon />}
+                  disabled={quoteFiles.length >= 8} // Disable if 8 files are already selected
                 >
-                  Choose Quote Files
+                  Choose Quote Files (Max 8)
                   <input
                     type="file"
                     hidden
@@ -227,6 +240,7 @@ const CreateComparison: React.FC = () => {
                 )}
               </Box>
 
+              {/* Actions */}
               <Box display="flex" justifyContent="space-between" my={2}>
                 <Button variant="outlined" color="primary" onClick={handleClearAll}>
                   Clear All

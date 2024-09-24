@@ -1,0 +1,30 @@
+import * as fs from 'fs';
+import * as crypto from 'crypto';
+
+// Function to Base64URL encode a buffer
+function base64urlEncode(buffer: Buffer): string {
+  return buffer.toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+// Read the certificate file (PEM format)
+const certPem = fs.readFileSync('path/to/your/certificate.pem', 'utf8');
+
+// Extract the Base64 content between the header and footer
+const certBase64 = certPem
+  .replace('-----BEGIN CERTIFICATE-----', '')
+  .replace('-----END CERTIFICATE-----', '')
+  .replace(/\r?\n|\r/g, ''); // Remove newlines
+
+// Decode the Base64 to get DER bytes
+const certDer = Buffer.from(certBase64, 'base64');
+
+// Compute the SHA-1 hash of the DER bytes
+const sha1Hash = crypto.createHash('sha1').update(certDer).digest();
+
+// Base64URL-encode the hash to get x5t
+const x5t = base64urlEncode(sha1Hash);
+
+console.log('x5t:', x5t);

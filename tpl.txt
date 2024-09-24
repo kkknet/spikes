@@ -1,0 +1,84 @@
+// Install-Package System.Threading.Tasks.Dataflow
+
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
+
+public class Event
+{
+    public int Id { get; set; }
+    public string Data { get; set; }
+}
+
+public class Program
+{
+    private static readonly HttpClient httpClient = new HttpClient();
+
+    public static async Task Main(string[] args)
+    {
+        // Create a list of event objects
+        var events = new List<Event>
+        {
+            new Event { Id = 1, Data = "Event Data 1" },
+            new Event { Id = 2, Data = "Event Data 2" },
+            new Event { Id = 3, Data = "Event Data 3" },
+            // Add more events as needed
+        };
+
+        // Process the events in parallel without waiting for all tasks to complete
+        await ProcessEventsAsync(events);
+    }
+
+    public static async Task ProcessEventsAsync(List<Event> events)
+    {
+        // Create an ActionBlock that processes each event asynchronously
+        var actionBlock = new ActionBlock<Event>(
+            async evt =>
+            {
+                await SendEventAsync(evt);
+            },
+            new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = DataflowBlockOptions.Unbounded, // Adjust as needed
+                EnsureOrdered = false // Process events independently without preserving order
+            });
+
+        // Post events to the ActionBlock
+        foreach (var evt in events)
+        {
+            actionBlock.Post(evt);
+        }
+
+        // Signal that no more events will be posted
+        actionBlock.Complete();
+
+        // Optionally await the completion of all tasks
+        await actionBlock.Completion;
+    }
+
+    public static async Task SendEventAsync(Event evt)
+    {
+        try
+        {
+            // Prepare the content to send
+            var content = new StringContent(evt.Data);
+
+            // Send POST request to the REST API
+            var response = await httpClient.PostAsync("https://example.com/api/events", content);
+
+            // Ensure the response is successful
+            response.EnsureSuccessStatusCode();
+
+            // Read and process the response content
+            var responseData = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Event {evt.Id} processed. Response: {responseData}");
+        }
+        catch (Exception ex)
+        {
+            // Handle exceptions for individual events
+            Console.WriteLine($"Error processing event {evt.Id}: {ex.Message}");
+        }
+    }
+}

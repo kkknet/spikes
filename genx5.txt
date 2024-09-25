@@ -28,3 +28,51 @@ const sha1Hash = crypto.createHash('sha1').update(certDer).digest();
 const x5t = base64urlEncode(sha1Hash);
 
 console.log('x5t:', x5t);
+
+
+
+
+
+
+
+import { ConfidentialClientApplication } from "@azure/msal-node";
+import * as fs from "fs";
+import * as path from "path";
+
+// Load your certificate and private key
+const certPath = path.join(__dirname, "cert.pem");
+const keyPath = path.join(__dirname, "key.pem");
+const certificate = fs.readFileSync(certPath, "utf8");
+const privateKey = fs.readFileSync(keyPath, "utf8");
+
+// Initialize the MSAL client
+const clientConfig = {
+    auth: {
+        clientId: "YOUR_CLIENT_ID",
+        authority: "https://YOUR_TENANT_NAME.b2clogin.com/YOUR_TENANT_NAME.onmicrosoft.com/B2C_1A_SIGNUP_SIGNIN",
+        clientCertificate: {
+            thumbprint: "YOUR_CERT_THUMBPRINT",
+            privateKey: privateKey,
+            x5c: certificate
+        }
+    }
+};
+
+const cca = new ConfidentialClientApplication(clientConfig);
+
+// Request JWT token
+const tokenRequest = {
+    scopes: ["https://YOUR_TENANT_NAME.onmicrosoft.com/api/read"],
+};
+
+async function getToken() {
+    try {
+        const response = await cca.acquireTokenByClientCredential(tokenRequest);
+        console.log("Access Token:", response.accessToken);
+    } catch (error) {
+        console.error("Error acquiring token:", error);
+    }
+}
+
+getToken();
+

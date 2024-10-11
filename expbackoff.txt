@@ -1,0 +1,87 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using Azure;
+using Azure.AI.FormRecognizer.DocumentAnalysis;
+using Azure.Core;
+using Azure.Core.Pipeline;
+
+public class CustomRetryPolicy : HttpPipelinePolicy
+{
+    private static readonly int[] RetryDelaysInSeconds = { 2, 5, 13, 34 };
+
+    public override void Process(HttpMessage message, ReadOnlyMemory<HttpPipelinePolicy> pipeline)
+    {
+        // Synchronous execution is not implemented in this example.
+        throw new NotSupportedException("Synchronous execution is not supported.");
+    }
+
+    public override async ValueTask ProcessAsync(HttpMessage message, ReadOnlyMemory<HttpPipelinePolicy> pipeline)
+    {
+        int attempt = 0;
+
+        while (true)
+        {
+            try
+            {
+                await pipeline[0].ProcessAsync(message, pipeline.Slice(1));
+                // If successful, exit the loop.
+                break;
+            }
+            catch (Exception ex) when (attempt < RetryDelaysInSeconds.Length)
+            {
+                int delay = RetryDelaysInSeconds[attempt];
+                Console.WriteLine($"Attempt {attempt + 1} failed: {ex.Message}. Retrying in {delay} seconds...");
+
+                // Reset the request content stream position if necessary.
+                if (message.Request.Content is RequestContentStream contentStream && contentStream.TryComputeLength(out _))
+                {
+                    contentStream.Stream.Position = 0;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(delay));
+                attempt++;
+            }
+            catch
+            {
+                // If retries are exhausted, rethrow the exception.
+                throw;
+            }
+        }
+    }
+}
+
+public class AzureDocumentIntelligenceClient
+{
+    private readonly DocumentAnalysisClient _client;
+
+    public AzureDocumentIntelligenceClient(string endpoint, string apiKey)
+    {
+        var credential = new AzureKeyCredential(apiKey);
+
+        var options = new DocumentAnalysisClientOptions
+        {
+            Retry =
+            {
+                MaxRetries = 0 // Disable default retry policy
+            }
+        };
+        options.AddPolicy(new CustomRetryPolicy(), HttpPipelinePosition.PerCall);
+
+        _client = new DocumentAnalysisClient(new Uri(endpoint), credential, options);
+    }
+
+    public async Task AnalyzeDocumentAsync(string modelId, Stream documentStream)
+    {
+        // Ensure the stream is seekable for retries.
+        if (!documentStream.CanSeek)
+        {
+            throw new InvalidOperationException("The document stream must be seekable for retries.");
+        }
+
+        var operation = await _client.AnalyzeDocumentAsync(WaitUntil.Completed, modelId, documentStream);
+        var result = operation.Value;
+
+        // Process the result as needed.
+    }
+}

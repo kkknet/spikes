@@ -1,0 +1,117 @@
+Step-by-Step Guide to Register an Application in Azure AD B2C and Manage API Permissions
+
+Register an Application in Azure AD B2C
+	1.	Sign in to Azure Portal:
+	•	Go to Azure Portal.
+	•	Sign in with your Azure AD B2C admin credentials.
+	2.	Navigate to Azure AD B2C:
+	•	In the search bar, type “Azure AD B2C” and select your B2C tenant.
+	3.	Go to App Registrations:
+	•	In the left-hand menu, click on App registrations.
+	4.	Register a New Application:
+	•	Click New registration.
+	•	Provide the following details:
+	•	Name: Enter a descriptive name for your application.
+	•	Supported account types: Select Accounts in this organizational directory only.
+	•	Redirect URI: Add the URI for your application, e.g., https://localhost (for local testing) or your app’s production URL.
+	•	Click Register.
+	5.	Copy Application (Client) ID and Directory (Tenant) ID:
+	•	After registration, go to the application’s Overview page.
+	•	Copy the Application (client) ID and Directory (tenant) ID. These will be needed for integration.
+
+Add API Permissions to the Registered Application
+	1.	Navigate to API Permissions:
+	•	Under your application’s page, select API permissions from the left menu.
+	2.	Add a Permission:
+	•	Click on Add a permission.
+	•	Choose one of the following based on your needs:
+	•	Microsoft APIs: For accessing resources like Microsoft Graph.
+	•	My APIs: For accessing your custom APIs.
+	•	Select the API or Microsoft Graph.
+	3.	Select Permission Type:
+	•	Choose the appropriate permission type:
+	•	Delegated permissions: For permissions that require a signed-in user.
+	•	Application permissions: For permissions that don’t require a user context.
+	•	Select the required permissions and click Add permissions.
+	4.	Grant Admin Consent:
+	•	If your application requires admin consent for the selected permissions:
+	•	Click Grant admin consent for .
+	•	Confirm by clicking Yes.
+
+Remove API Permissions
+	1.	Navigate to API Permissions:
+	•	Go to the API permissions tab of your application.
+	2.	Remove a Permission:
+	•	Locate the permission you want to remove.
+	•	Click on the ellipsis (⋮) next to the permission.
+	•	Select Remove permission.
+	3.	Confirm Removal:
+	•	Confirm by clicking Yes when prompted.
+
+Additional Steps for Custom APIs
+	1.	Expose Your API:
+	•	If you’re managing a custom API, you’ll need to expose it in Azure AD B2C.
+	•	Go to the Expose an API tab in your API application.
+	•	Add a new scope by defining:
+	•	Scope name: e.g., access_as_user.
+	•	Admin consent display name/description: Descriptive text for admin approval.
+	2.	Add Your API as a Permission:
+	•	Go back to the client application and repeat the Add a Permission steps.
+	•	Select your API under My APIs and choose the defined scopes.
+
+This completes the process of registering an application and managing API permissions in Azure AD B2C. Let me know if you need help with implementation or testing!
+
+
+
+
+
+
+Instructions for Adding a Certificate or Secret Credential to an Azure AD B2C Application
+
+1. Add a Client Secret
+
+A client secret is a password that your application uses to authenticate itself when accessing Azure AD B2C resources.
+	1.	Navigate to Your Application:
+	•	Go to the App registrations section in Azure AD B2C.
+	•	Select the application for which you want to add a secret.
+	2.	Go to Certificates & Secrets:
+	•	In the left-hand menu, click Certificates & secrets.
+	3.	Add a New Client Secret:
+	•	Under Client secrets, click + New client secret.
+	•	Provide the following details:
+	•	Description: Add a description (e.g., “App secret for API access”).
+	•	Expires: Choose the expiration period (e.g., 6 months, 12 months, or custom expiration date).
+	•	Click Add.
+	4.	Copy the Secret Value:
+	•	Once created, the secret value will be displayed. Copy this value immediately, as it won’t be shown again.
+	•	Store the secret securely in a safe place (e.g., Azure Key Vault or a secure configuration file).
+
+2. Add a Certificate
+
+Certificates are used for enhanced security and are an alternative to client secrets.
+	1.	Navigate to Your Application:
+	•	Go to the App registrations section in Azure AD B2C.
+	•	Select the application for which you want to add a certificate.
+	2.	Go to Certificates & Secrets:
+	•	In the left-hand menu, click Certificates & secrets.
+	3.	Upload a Certificate:
+	•	Under Certificates, click + Upload certificate.
+	•	Select the certificate file (e.g., .cer, .pem).
+	•	Click Add.
+	4.	Verify Certificate Upload:
+	•	Once uploaded, you’ll see the certificate’s details (e.g., thumbprint, expiry date) listed under Certificates.
+
+3. Use the Credentials in Your Application
+	•	Client ID and Secret/Certificate: Use the Application (client) ID and the client secret or certificate in your application to authenticate against Azure AD B2C.
+	•	Configuration Example:
+	•	For a client secret, include it in your app’s authentication settings.
+	•	For a certificate, ensure your app has access to the private key and uses it for authentication.
+
+Important Notes:
+	•	Security Best Practices:
+	•	Use certificates instead of client secrets when possible, as they provide stronger security.
+	•	Store client secrets and certificates securely, such as in Azure Key Vault.
+	•	Rotation: Regularly rotate client secrets and certificates to minimize security risks.
+	•	Testing: Validate the new credentials by testing authentication scenarios with your application.
+
+Let me know if you need help configuring these in your application or testing the authentication!

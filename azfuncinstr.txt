@@ -1,0 +1,58 @@
+Here’s a step-by-step guide to add a certificate from an Azure Key Vault to an Azure Function App:
+
+Prerequisites
+	1.	An Azure Function App is created.
+	2.	The certificate is already stored in Azure Key Vault.
+
+Step 1: Assign the Managed Identity to the Function App
+	1.	Go to the Azure Portal.
+	2.	Navigate to your Function App.
+	3.	Under the Settings section, select Identity.
+	4.	Enable the System-assigned managed identity:
+	•	Set the status to On.
+	•	Click Save.
+	5.	Copy the Object ID of the Function App for use in the Key Vault access policy.
+
+Step 2: Grant the Function App Access to the Key Vault
+	1.	Navigate to the Key Vault that contains the certificate.
+	2.	Under Settings, select Access Policies.
+	3.	Click on + Add Access Policy.
+	4.	Configure the access policy:
+	•	Certificate Permissions: Select Get and List.
+	•	Principal: Search for and select the Function App’s managed identity using its Object ID.
+	5.	Click Add and then Save.
+
+Step 3: Configure the Azure Function to Use the Key Vault Certificate
+	1.	Go back to the Function App in the Azure Portal.
+	2.	Under Settings, select Configuration.
+	3.	Click on + New application setting and add the following:
+	•	Name: Provide a meaningful name (e.g., MyCertificateSecretUri).
+	•	Value: Paste the Secret Identifier of the certificate from Key Vault. You can find this in the Key Vault under the certificate -> Current Version -> Secret Identifier.
+	4.	Click OK and Save the changes.
+
+Step 4: Access the Certificate in the Function App Code
+	•	In your function code, you can retrieve the certificate using the Azure SDK or environment variables.
+	•	Example in C# using the Azure.Identity and Azure.Security.KeyVault.Secrets libraries:
+
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+
+public static void Run(HttpRequest req, ILogger log)
+{
+    string keyVaultUri = Environment.GetEnvironmentVariable("MyCertificateSecretUri");
+    
+    // Create a Secret Client
+    var client = new SecretClient(new Uri(keyVaultUri), new DefaultAzureCredential());
+
+    // Retrieve the certificate
+    KeyVaultSecret secret = client.GetSecret("CertificateName"); // Replace with actual certificate name
+    string certificateValue = secret.Value;
+
+    log.LogInformation($"Certificate retrieved: {certificateValue}");
+}
+
+Step 5: Verify the Certificate Access
+	1.	Deploy your function.
+	2.	Test the function to ensure it can access and use the certificate securely.
+
+This setup ensures your Azure Function App securely retrieves and uses the certificate stored in the Azure Key Vault.

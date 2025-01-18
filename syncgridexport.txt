@@ -1,0 +1,58 @@
+import React, { useRef } from "react";
+import {
+  GridComponent,
+  ColumnsDirective,
+  ColumnDirective,
+  Inject,
+  Toolbar,
+  ExcelExport,
+  ToolbarItems,
+  ExcelExportProperties,
+  Grid,
+} from "@syncfusion/ej2-react-grids";
+
+const App: React.FC = () => {
+  const gridRef = useRef<Grid | null>(null);
+
+  const data = [
+    { OrderID: 10248, CustomerName: "Paul Henriot", ShipCountry: "France" },
+    { OrderID: 10249, CustomerName: "Karin Josephs", ShipCountry: "Germany" },
+    { OrderID: 10250, CustomerName: "Mario Pontes", ShipCountry: "Brazil" },
+    // Add more data for testing
+  ];
+
+  const toolbarClick = (args: any) => {
+    if (args.item.id === "Grid_excelexport") {
+      // Set export properties to export all data
+      const exportProperties: ExcelExportProperties = {
+        includeHiddenColumns: true, // Include hidden columns if needed
+        dataSource: data, // Bind the entire data source
+      };
+
+      gridRef.current?.excelExport(exportProperties);
+    }
+  };
+
+  return (
+    <div>
+      <GridComponent
+        dataSource={data}
+        allowExcelExport={true}
+        toolbar={["ExcelExport"] as ToolbarItems[]}
+        toolbarClick={toolbarClick}
+        ref={(grid) => (gridRef.current = grid)}
+        allowPaging={true} // Enable paging for demonstration
+        pageSettings={{ pageSize: 2 }} // Example: 2 items per page
+      >
+        <ColumnsDirective>
+          <ColumnDirective field="OrderID" headerText="Order ID" width="100" textAlign="Right" />
+          <ColumnDirective field="CustomerName" headerText="Customer Name" width="150" />
+          <ColumnDirective field="ShipCountry" headerText="Ship Country" width="150" />
+        </ColumnsDirective>
+        <Inject services={[Toolbar, ExcelExport]} />
+      </GridComponent>
+    </div>
+  );
+};
+
+export default App;

@@ -1,0 +1,70 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+
+public async Task<List<ResultDto>> GetFilteredDataAsync(
+    string facility,
+    DateTime chrStartBefore,
+    int topResults,
+    YourDbContext dbContext)
+{
+    // Step 1: Get the latest CreatedDateTime per ActivityID
+    var latestStatusLog = await dbContext.TrackingMessageStatusLogs
+        .GroupBy(t3 => t3.ActivityID)
+        .Select(g => new
+        {
+            ActivityID = g.Key,
+            LatestCreatedDateTime = g.Max(t3 => t3.CreatedDateTime)
+        })
+        .ToListAsync();
+
+    // Step 2: Join tables and apply filtering conditions
+    var filteredDataQuery = from t in dbContext.TrackingMessageLogs
+                            join t0 in dbContext.TrackingMetadataLogs
+                                on t.ActivityID equals t0.ActivityID into t0Group
+                            from t0 in t0Group.DefaultIfEmpty()
+                            join t1 in dbContext.TrackingMessageStatusLogs
+                                on t.ActivityID equals t1.ActivityID
+                            join t2 in dbContext.TrackingMessageStatusLogs
+                                on t1.ActivityID equals t2.ActivityID
+                            join v in dbContext.VwMessageStatusLogPivots
+                                on t1.ActivityID equals v.ActivityID
+                            where t.Facility == facility
+                                  && v.CHRStart <= chrStartBefore
+                            select new
+                            {
+                                t.ActivityID,
+                                t.MessageControlID,
+                                t.ExtendedMsgControlID,
+                                t.Facility,
+                                t.SendingApp,
+                                t.ReceivedTime,
+                                SenderIP = t0 != null ? t0.SenderIP : null,
+                                t1.StatusType,
+                                t2.Destination,
+                                v.CHRStart
+                            };
+
+    // Step 3: Join with latest status log and order by ReceivedTime
+    var resultQuery = from fd in filteredDataQuery
+                      join ls in latestStatusLog
+                          on fd.ActivityID equals ls.ActivityID
+                      orderby fd.ReceivedTime descending
+                      select new ResultDto
+                      {
+                          ActivityID = fd.ActivityID,
+                          MessageControlID = fd.MessageControlID,
+                          ExtendedMsgControlID = fd.ExtendedMsgControlID,
+                          Facility = fd.Facility,
+                          SendingApp = fd.SendingApp,
+                          ReceivedTime = fd.ReceivedTime,
+                          SenderIP = fd.SenderIP,
+                          StatusType = fd.StatusType,
+                          Destination = fd.Destination,
+                          CHRStart = fd.CHRStart,
+                          LatestCreatedDateTime = ls.LatestCreatedDateTime
+                      };
+
+    // Step 4: Take the top results
+    return await resultQuery.Take(topResults).ToListAsync();
+}

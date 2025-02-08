@@ -1,25 +1,149 @@
-public async Task<List<(string MessageData, string FileType)>> GetAuditDataAsync(
-    ApplicationDbContext context, string facility, string messageType, string messageControlId, string batchFileName)
+If ResultDto is not defined in the database, you can still use Entity Framework Core (EF Core) with FromSqlRaw by ensuring that the DTO is configured as a keyless entity. Here’s how you can do that:
+
+1. Define the ResultDto Class
+
+Since ResultDto is not a table in the database but rather a model for query results, mark it as keyless:
+
+using Microsoft.EntityFrameworkCore;
+
+[Keyless] // Important: Mark as keyless since it's not mapped to a DB table
+public class ResultDto
 {
-    // Query for the first condition set
-    var firstPart = context.AuditInstances
-        .Where(a => a.SendingFacility == facility && a.MessageType == messageType && a.MessageControlID == messageControlId)
-        .Join(context.Stages, a => a.StageID, s => s.ID, (a, s) => new { a, s })
-        .GroupBy(x => x.s.Name)
-        .Select(g => g.OrderByDescending(x => x.a.AuditDate).FirstOrDefault())
-        .Select(x => new MessageFileTypeResult { MessageData = x.a.MessageData, FileType = x.s.FileType });
-
-    // Query for the second condition set
-    var secondPart = context.AuditInstances
-        .Where(a => a.Stage.TriggerEvent == batchFileName)
-        .Join(context.Stages, a => a.StageID, s => s.ID, (a, s) => new { a, s })
-        .GroupBy(x => x.s.Name)
-        .Select(g => g.OrderByDescending(x => x.a.AuditDate).FirstOrDefault())
-        .Select(x => new MessageFileTypeResult { MessageData = x.a.MessageData, FileType = x.s.FileType });
-
-    // Union and execution
-    var combinedResults = firstPart.Union(secondPart);
-
-    var resultList = await combinedResults.ToListAsync();
-    return resultList.Select(x => (x.MessageData, x.FileType)).ToList();
+    public int ActivityID { get; set; }
+    public string MessageControlID { get; set; }
+    public string ExtendedMsgControlID { get; set; }
+    public string Facility { get; set; }
+    public string SendingApp { get; set; }
+    public DateTime ReceivedTime { get; set; }
+    public string SenderIP { get; set; }
+    public string StatusType { get; set; }
+    public string Destination { get; set; }
+    public DateTime CHRStart { get; set; }
+    public DateTime LatestCreatedDateTime { get; set; }
 }
+
+2. Configure ResultDto in DbContext
+
+Since ResultDto is not a database entity, you need to register it as a keyless entity in YourDbContext:
+
+public class YourDbContext : DbContext
+{
+    public YourDbContext(DbContextOptions<YourDbContext> options) : base(options) {}
+
+    // Register DTO as a keyless entity for raw SQL queries
+    public DbSet<ResultDto> ResultDtoSet { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ResultDto>().HasNoKey(); // Define ResultDto as keyless
+    }
+}
+
+	🔹 DbSet<ResultDto> ResultDtoSet { get; set; }
+		•	This allows us to execute raw SQL queries and map results to ResultDto.
+	•	No migration is needed because ResultDto is not a table.
+
+3. Execute Raw SQL Using FromSqlRaw
+
+Now, use FromSqlRaw to run the SQL query and return ResultDto results:
+
+public async Task<List<ResultDto>> GetFilteredDataAsync(
+    string facility,
+    DateTime chrStartBefore,
+    int topResults,
+    YourDbContext dbContext)
+{
+    // Define SQL query using raw SQL
+    string sqlQuery = @"
+    WITH LatestStatusLog AS (
+        SELECT 
+            t3.ActivityID, 
+            MAX(t3.CreatedDateTime) AS LatestCreatedDateTime
+        FROM 
+            [Tracking.MessageStatusLog] AS t3
+        GROUP BY 
+            t3.ActivityID
+    ),
+    FilteredData AS (
+        SELECT 
+            t.ActivityID, 
+            t.MessageControlID, 
+            t.ExtendedMsgControlID, 
+            t.Facility, 
+            t.SendingApp,
+            t.ReceivedTime, 
+            t0.SenderIP, 
+            t1.StatusType, 
+            t2.Destination, 
+            v.CHRStart
+        FROM 
+            [Tracking.MessageLog] AS t
+        LEFT JOIN 
+            [Tracking.MetadataLog] AS t0 ON t.ActivityID = t0.ActivityID
+        INNER JOIN 
+            [Tracking.MessageStatusLog] AS t1 ON t.ActivityID = t1.ActivityID
+        INNER JOIN 
+            [Tracking.MessageStatusLog] AS t2 ON t1.ActivityID = t2.ActivityID
+        INNER JOIN 
+            [vwMessageStatusLogPivot] AS v ON t1.ActivityID = v.ActivityID
+        WHERE 
+            t.Facility = @Facility
+            AND v.CHRStart <= @CHRStartBefore
+    )
+    SELECT TOP (@TopResults) 
+        fd.ActivityID, 
+        fd.MessageControlID, 
+        fd.ExtendedMsgControlID, 
+        fd.Facility, 
+        fd.SendingApp, 
+        fd.ReceivedTime, 
+        fd.SenderIP, 
+        fd.StatusType, 
+        fd.Destination, 
+        fd.CHRStart,
+        ls.LatestCreatedDateTime
+    FROM 
+        FilteredData AS fd
+    INNER JOIN 
+        LatestStatusLog AS ls ON fd.ActivityID = ls.ActivityID
+    ORDER BY 
+        fd.ReceivedTime DESC;";
+
+    // Execute raw SQL using FromSqlRaw with parameters
+    var result = await dbContext.ResultDtoSet
+        .FromSqlRaw(sqlQuery,
+            new SqlParameter("@Facility", facility),
+            new SqlParameter("@CHRStartBefore", chrStartBefore),
+            new SqlParameter("@TopResults", topResults))
+        .ToListAsync();
+
+    return result;
+}
+
+Key Fixes & Enhancements
+
+✅ ResultDto is a Keyless DTO
+	•	HasNoKey() tells EF Core it’s a query result, not a table.
+	•	No migrations or table modifications needed.
+
+✅ FromSqlRaw with Parameterized Queries
+	•	Uses @Facility, @CHRStartBefore, and @TopResults to prevent SQL injection.
+
+✅ EF Core Can Handle Complex Queries with CTEs (WITH Statement)
+	•	Raw SQL executes directly in SQL Server, improving performance.
+
+✅ Avoids Unnecessary Tracking
+	•	Since ResultDto is keyless, it is not tracked by EF Core, reducing memory usage.
+
+When Should You Use FromSqlRaw?
+	•	✅ When using complex SQL queries with CTEs.
+	•	✅ When performance is critical and EF Core LINQ would generate inefficient SQL.
+	•	✅ When the result does not map to an entity but is only used for read operations.
+	•	❌ Avoid if you need EF Core features like relationships, lazy loading, or tracking.
+
+Final Thoughts
+
+🚀 This solution allows you to execute raw SQL queries in EF Core while keeping the database schema untouched.
+🚀 It’s optimized, secure (SQL injection prevention), and efficiently retrieves the required data.
+
+Let me know if you need any refinements! 🚀🔥

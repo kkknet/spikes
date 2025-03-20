@@ -1,0 +1,68 @@
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+
+class ExcelToCsvConverter_OpenXml
+{
+    static void Main(string[] args)
+    {
+        string excelFilePath = @"C:\path\to\your\file.xlsx";
+        string csvOutputPath = @"C:\path\to\your\output.csv";
+
+        var csvData = ReadExcelToCsv(excelFilePath);
+        File.WriteAllText(csvOutputPath, csvData, Encoding.UTF8);
+        Console.WriteLine("Excel converted to CSV successfully.");
+    }
+
+    static string ReadExcelToCsv(string filePath)
+    {
+        var sb = new StringBuilder();
+
+        using (SpreadsheetDocument document = SpreadsheetDocument.Open(filePath, false))
+        {
+            WorkbookPart workbookPart = document.WorkbookPart;
+            var sharedStringTable = workbookPart.SharedStringTablePart?.SharedStringTable;
+
+            WorksheetPart worksheetPart = workbookPart.WorksheetParts.First();
+            SheetData sheetData = worksheetPart.Worksheet.Elements<SheetData>().First();
+
+            foreach (Row row in sheetData.Elements<Row>())
+            {
+                var cellValues = new List<string>();
+                foreach (Cell cell in row.Elements<Cell>())
+                {
+                    string value = GetCellValue(cell, sharedStringTable);
+                    value = value.Replace("\"", "\"\""); // Escape quotes
+                    if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
+                        value = $"\"{value}\"";
+                    cellValues.Add(value);
+                }
+                sb.AppendLine(string.Join(",", cellValues));
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    static string GetCellValue(Cell cell, SharedStringTable sharedStringTable)
+    {
+        if (cell == null || cell.CellValue == null)
+            return string.Empty;
+
+        string value = cell.CellValue.InnerText;
+
+        if (cell.DataType != null && cell.DataType.Value == CellValues.SharedString)
+        {
+            if (int.TryParse(value, out int index) && sharedStringTable != null)
+            {
+                return sharedStringTable.ElementAt(index).InnerText;
+            }
+        }
+
+        return value;
+    }
+}

@@ -1,0 +1,84 @@
+To read .xls and .xlsx documents and convert them to CSV using the ExcelDataReader NuGet package in a C# .NET Core application, you can follow these steps:
+
+1. Install the `ExcelDataReader` and `ExcelDataReader.DataSet` packages via NuGet.
+2. Use the following code to read the Excel files and convert them to CSV.
+
+Here's an example:
+
+1. Install the necessary packages:
+   ```sh
+   dotnet add package ExcelDataReader
+   dotnet add package ExcelDataReader.DataSet
+   ```
+
+2. Create a C# .NET Core console application and use the following code:
+
+   ```csharp
+   using System;
+   using System.Data;
+   using System.IO;
+   using ExcelDataReader;
+
+   class Program
+   {
+       static void Main(string[] args)
+       {
+           if (args.Length != 2)
+           {
+               Console.WriteLine("Usage: Program <input file path> <output file path>");
+               return;
+           }
+
+           string inputFilePath = args[0];
+           string outputFilePath = args[1];
+
+           using (var stream = File.Open(inputFilePath, FileMode.Open, FileAccess.Read))
+           {
+               using (var reader = ExcelReaderFactory.CreateReader(stream))
+               {
+                   var result = reader.AsDataSet();
+                   DataTable table = result.Tables[0]; // Assuming you want to read the first sheet
+                   ConvertToCsv(table, outputFilePath);
+               }
+           }
+       }
+
+       static void ConvertToCsv(DataTable table, string outputFilePath)
+       {
+           using (var writer = new StreamWriter(outputFilePath))
+           {
+               // Write header
+               for (int i = 0; i < table.Columns.Count; i++)
+               {
+                   writer.Write(table.Columns[i].ColumnName);
+                   if (i < table.Columns.Count - 1)
+                   {
+                       writer.Write(",");
+                   }
+               }
+               writer.WriteLine();
+
+               // Write rows
+               foreach (DataRow row in table.Rows)
+               {
+                   for (int i = 0; i < table.Columns.Count; i++)
+                   {
+                       writer.Write(row[i].ToString());
+                       if (i < table.Columns.Count - 1)
+                       {
+                           writer.Write(",");
+                       }
+                   }
+                   writer.WriteLine();
+               }
+           }
+       }
+   }
+   ```
+
+3. Run the application with the input and output file paths as arguments:
+   ```sh
+   dotnet run <input file path> <output file path>
+   ```
+
+This code reads an Excel file (either .xls or .xlsx) and converts the data in the first sheet to a CSV file. The `ExcelDataReader` library is used to read the Excel file, and the data is written to a CSV file using a `StreamWriter`.

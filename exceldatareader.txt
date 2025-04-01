@@ -1,0 +1,55 @@
+using System;
+using System.Data;
+using System.IO;
+using System.Text;
+using ExcelDataReader;
+
+class ExcelToCsvConverter
+{
+    static void Main(string[] args)
+    {
+        string excelPath = @"C:\path\to\your\file.xlsx"; // or .xls
+        string csvPath = @"C:\path\to\your\output.csv";
+
+        ConvertExcelToCsv(excelPath, csvPath);
+        Console.WriteLine("Excel file converted to CSV successfully.");
+    }
+
+    static void ConvertExcelToCsv(string excelPath, string csvOutputPath)
+    {
+        // Required for ExcelDataReader in .NET Core
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+        using (var stream = File.Open(excelPath, FileMode.Open, FileAccess.Read))
+        using (var reader = ExcelReaderFactory.CreateReader(stream))
+        {
+            var config = new ExcelDataSetConfiguration()
+            {
+                ConfigureDataTable = _ => new ExcelDataTableConfiguration() { UseHeaderRow = false }
+            };
+
+            var dataSet = reader.AsDataSet(config);
+            var table = dataSet.Tables[0]; // First worksheet
+
+            var sb = new StringBuilder();
+
+            foreach (DataRow row in table.Rows)
+            {
+                var values = new List<string>();
+
+                foreach (var cell in row.ItemArray)
+                {
+                    string value = cell?.ToString()?.Trim() ?? "";
+                    value = value.Replace("\"", "\"\"");
+                    if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
+                        value = $"\"{value}\"";
+                    values.Add(value);
+                }
+
+                sb.AppendLine(string.Join(",", values));
+            }
+
+            File.WriteAllText(csvOutputPath, sb.ToString(), Encoding.UTF8);
+        }
+    }
+}

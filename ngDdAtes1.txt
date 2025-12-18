@@ -1,0 +1,526 @@
+// commodity.component.spec.ts
+import { ComponentFixture, TestBed } from ‘@angular/core/testing’;
+import { FormsModule } from ‘@angular/forms’;
+import { HttpClientTestingModule, HttpTestingController } from ‘@angular/common/http/testing’;
+import { CommodityComponent } from ‘./commodity.component’;
+
+describe(‘CommodityComponent’, () => {
+let component: CommodityComponent;
+let fixture: ComponentFixture<CommodityComponent>;
+let httpMock: HttpTestingController;
+
+beforeEach(async () => {
+await TestBed.configureTestingModule({
+imports: [CommodityComponent, FormsModule, HttpClientTestingModule]
+}).compileComponents();
+
+```
+fixture = TestBed.createComponent(CommodityComponent);
+component = fixture.componentInstance;
+httpMock = TestBed.inject(HttpTestingController);
+```
+
+});
+
+afterEach(() => {
+httpMock.verify();
+});
+
+it(‘should create’, () => {
+expect(component).toBeTruthy();
+});
+
+describe(‘Component Initialization’, () => {
+it(‘should load other commodities on init’, () => {
+const mockOtherCommodities = [
+{ id: ‘1’, name: ‘Alfalfa Seed’, code: ‘0100’ },
+{ id: ‘2’, name: ‘Buckwheat’, code: ‘1500’ }
+];
+
+```
+  fixture.detectChanges();
+
+  const req = httpMock.expectOne('/api/commodities/other');
+  expect(req.request.method).toBe('GET');
+  req.flush(mockOtherCommodities);
+
+  expect(component.otherCommodities).toEqual(mockOtherCommodities);
+  expect(component.isLoadingOtherCommodities).toBe(false);
+});
+
+it('should use mock data when API fails', () => {
+  fixture.detectChanges();
+
+  const req = httpMock.expectOne('/api/commodities/other');
+  req.error(new ErrorEvent('Network error'));
+
+  expect(component.otherCommodities.length).toBeGreaterThan(0);
+  expect(component.isLoadingOtherCommodities).toBe(false);
+});
+```
+
+});
+
+describe(‘Column 1 - Grain Checkboxes’, () => {
+it(‘should toggle cmdtyWheat1000 checkbox’, () => {
+component.cmdtyWheat1000 = false;
+component.cmdtyWheat1000 = true;
+expect(component.cmdtyWheat1000).toBe(true);
+});
+
+```
+it('should toggle cmdtyCorn2000 checkbox', () => {
+  component.cmdtyCorn2000 = false;
+  component.cmdtyCorn2000 = true;
+  expect(component.cmdtyCorn2000).toBe(true);
+});
+
+it('should toggle cmdtyBarley2200 checkbox', () => {
+  component.cmdtyBarley2200 = false;
+  component.cmdtyBarley2200 = true;
+  expect(component.cmdtyBarley2200).toBe(true);
+});
+
+it('should toggle cmdtyOats2300 checkbox', () => {
+  component.cmdtyOats2300 = false;
+  component.cmdtyOats2300 = true;
+  expect(component.cmdtyOats2300).toBe(true);
+});
+
+it('should toggle cmdtyFlaxseed2500 checkbox', () => {
+  component.cmdtyFlaxseed2500 = false;
+  component.cmdtyFlaxseed2500 = true;
+  expect(component.cmdtyFlaxseed2500).toBe(true);
+});
+
+it('should toggle cmdtySoybeans2600 checkbox', () => {
+  component.cmdtySoybeans2600 = false;
+  component.cmdtySoybeans2600 = true;
+  expect(component.cmdtySoybeans2600).toBe(true);
+});
+
+it('should toggle cmdtySorghum2700 checkbox', () => {
+  component.cmdtySorghum2700 = false;
+  component.cmdtySorghum2700 = true;
+  expect(component.cmdtySorghum2700).toBe(true);
+});
+
+it('should toggle cmdtyLentilsDry4165 checkbox', () => {
+  component.cmdtyLentilsDry4165 = false;
+  component.cmdtyLentilsDry4165 = true;
+  expect(component.cmdtyLentilsDry4165).toBe(true);
+});
+
+it('should toggle cmdtyPeanuts4210 checkbox', () => {
+  component.cmdtyPeanuts4210 = false;
+  component.cmdtyPeanuts4210 = true;
+  expect(component.cmdtyPeanuts4210).toBe(true);
+});
+```
+
+});
+
+describe(‘Column 2 - Fiber & Seed Checkboxes’, () => {
+it(‘should toggle cmdtyDryWholePeas4600 checkbox’, () => {
+component.cmdtyDryWholePeas4600 = false;
+component.cmdtyDryWholePeas4600 = true;
+expect(component.cmdtyDryWholePeas4600).toBe(true);
+});
+
+```
+it('should toggle cmdtyWool4850 checkbox', () => {
+  component.cmdtyWool4850 = false;
+  component.cmdtyWool4850 = true;
+  expect(component.cmdtyWool4850).toBe(true);
+});
+
+it('should toggle cmdtyMohair4860 checkbox', () => {
+  component.cmdtyMohair4860 = false;
+  component.cmdtyMohair4860 = true;
+  expect(component.cmdtyMohair4860).toBe(true);
+});
+
+it('should toggle cmdtyChickpeas5100 checkbox', () => {
+  component.cmdtyChickpeas5100 = false;
+  component.cmdtyChickpeas5100 = true;
+  expect(component.cmdtyChickpeas5100).toBe(true);
+});
+
+it('should toggle cmdtyExLongStapleCotton6000 checkbox', () => {
+  component.cmdtyExLongStapleCotton6000 = false;
+  component.cmdtyExLongStapleCotton6000 = true;
+  expect(component.cmdtyExLongStapleCotton6000).toBe(true);
+});
+
+it('should toggle cmdtyUplandCotton6100 checkbox', () => {
+  component.cmdtyUplandCotton6100 = false;
+  component.cmdtyUplandCotton6100 = true;
+  expect(component.cmdtyUplandCotton6100).toBe(true);
+});
+
+it('should toggle cmdtyUplandSeedCotton6300 checkbox', () => {
+  component.cmdtyUplandSeedCotton6300 = false;
+  component.cmdtyUplandSeedCotton6300 = true;
+  expect(component.cmdtyUplandSeedCotton6300).toBe(true);
+});
+
+it('should toggle cmdtyExLongStapleSeedCotton6600 checkbox', () => {
+  component.cmdtyExLongStapleSeedCotton6600 = false;
+  component.cmdtyExLongStapleSeedCotton6600 = true;
+  expect(component.cmdtyExLongStapleSeedCotton6600).toBe(true);
+});
+
+it('should toggle cmdtySesameSeeds6900 checkbox', () => {
+  component.cmdtySesameSeeds6900 = false;
+  component.cmdtySesameSeeds6900 = true;
+  expect(component.cmdtySesameSeeds6900).toBe(true);
+});
+```
+
+});
+
+describe(‘Column 3 - Seed & Oil Checkboxes’, () => {
+it(‘should toggle cmdtySunflowerSeeds7100 checkbox’, () => {
+component.cmdtySunflowerSeeds7100 = false;
+component.cmdtySunflowerSeeds7100 = true;
+expect(component.cmdtySunflowerSeeds7100).toBe(true);
+});
+
+```
+it('should toggle cmdtyCanolaSeed7200 checkbox', () => {
+  component.cmdtyCanolaSeed7200 = false;
+  component.cmdtyCanolaSeed7200 = true;
+  expect(component.cmdtyCanolaSeed7200).toBe(true);
+});
+
+it('should toggle cmdtyRapeseed7300 checkbox', () => {
+  component.cmdtyRapeseed7300 = false;
+  component.cmdtyRapeseed7300 = true;
+  expect(component.cmdtyRapeseed7300).toBe(true);
+});
+
+it('should toggle cmdtySafflowerSeed7400 checkbox', () => {
+  component.cmdtySafflowerSeed7400 = false;
+  component.cmdtySafflowerSeed7400 = true;
+  expect(component.cmdtySafflowerSeed7400).toBe(true);
+});
+
+it('should toggle cmdtyMustardSeed7600 checkbox', () => {
+  component.cmdtyMustardSeed7600 = false;
+  component.cmdtyMustardSeed7600 = true;
+  expect(component.cmdtyMustardSeed7600).toBe(true);
+});
+
+it('should toggle cmdtyCottonseed7700 checkbox', () => {
+  component.cmdtyCottonseed7700 = false;
+  component.cmdtyCottonseed7700 = true;
+  expect(component.cmdtyCottonseed7700).toBe(true);
+});
+
+it('should toggle cmdtySunflowerSeedNonOil7800 checkbox', () => {
+  component.cmdtySunflowerSeedNonOil7800 = false;
+  component.cmdtySunflowerSeedNonOil7800 = true;
+  expect(component.cmdtySunflowerSeedNonOil7800).toBe(true);
+});
+
+it('should toggle cmdtyCrambleOilSeed8000 checkbox', () => {
+  component.cmdtyCrambleOilSeed8000 = false;
+  component.cmdtyCrambleOilSeed8000 = true;
+  expect(component.cmdtyCrambleOilSeed8000).toBe(true);
+});
+
+it('should toggle cmdtyHoney8204 checkbox', () => {
+  component.cmdtyHoney8204 = false;
+  component.cmdtyHoney8204 = true;
+  expect(component.cmdtyHoney8204).toBe(true);
+});
+```
+
+});
+
+describe(‘Column 4 - Sugar & Rice Checkboxes’, () => {
+it(‘should toggle cmdtyRawCaneSugar8301 checkbox’, () => {
+component.cmdtyRawCaneSugar8301 = false;
+component.cmdtyRawCaneSugar8301 = true;
+expect(component.cmdtyRawCaneSugar8301).toBe(true);
+});
+
+```
+it('should toggle cmdtyInProcessCaneSugar8305 checkbox', () => {
+  component.cmdtyInProcessCaneSugar8305 = false;
+  component.cmdtyInProcessCaneSugar8305 = true;
+  expect(component.cmdtyInProcessCaneSugar8305).toBe(true);
+});
+
+it('should toggle cmdtyInProcessBeetSugar8306 checkbox', () => {
+  component.cmdtyInProcessBeetSugar8306 = false;
+  component.cmdtyInProcessBeetSugar8306 = true;
+  expect(component.cmdtyInProcessBeetSugar8306).toBe(true);
+});
+
+it('should toggle cmdtyRefinedCaneSugar8311 checkbox', () => {
+  component.cmdtyRefinedCaneSugar8311 = false;
+  component.cmdtyRefinedCaneSugar8311 = true;
+  expect(component.cmdtyRefinedCaneSugar8311).toBe(true);
+});
+
+it('should toggle cmdtyRoughRice9500 checkbox', () => {
+  component.cmdtyRoughRice9500 = false;
+  component.cmdtyRoughRice9500 = true;
+  expect(component.cmdtyRoughRice9500).toBe(true);
+});
+```
+
+});
+
+describe(‘Other Commodity Dropdown’, () => {
+beforeEach(() => {
+fixture.detectChanges();
+const req = httpMock.expectOne(’/api/commodities/other’);
+req.flush([
+{ id: ‘1’, name: ‘Alfalfa Seed’, code: ‘0100’ },
+{ id: ‘2’, name: ‘Buckwheat’, code: ‘1500’ },
+{ id: ‘3’, name: ‘Grass Seed’, code: ‘3000’ }
+]);
+});
+
+```
+it('should have empty value by default', () => {
+  expect(component.cmdtyOther).toBe('');
+});
+
+it('should set cmdtyOther when selection is made', () => {
+  component.cmdtyOther = '1';
+  expect(component.cmdtyOther).toBe('1');
+});
+
+it('should change cmdtyOther value', () => {
+  component.cmdtyOther = '2';
+  expect(component.cmdtyOther).toBe('2');
+});
+
+it('should reset cmdtyOther to empty string', () => {
+  component.cmdtyOther = '3';
+  component.cmdtyOther = '';
+  expect(component.cmdtyOther).toBe('');
+});
+
+it('should have otherCommodities populated from API', () => {
+  expect(component.otherCommodities.length).toBe(3);
+  expect(component.otherCommodities[0].name).toBe('Alfalfa Seed');
+});
+```
+
+});
+
+describe(‘selectAll() Function’, () => {
+beforeEach(() => {
+fixture.detectChanges();
+httpMock.expectOne(’/api/commodities/other’).flush([]);
+});
+
+```
+it('should select all checkboxes when selectAll is called', () => {
+  component.selectAll();
+
+  // Column 1
+  expect(component.cmdtyWheat1000).toBe(true);
+  expect(component.cmdtyCorn2000).toBe(true);
+  expect(component.cmdtyBarley2200).toBe(true);
+  expect(component.cmdtyOats2300).toBe(true);
+  expect(component.cmdtyFlaxseed2500).toBe(true);
+  expect(component.cmdtySoybeans2600).toBe(true);
+  expect(component.cmdtySorghum2700).toBe(true);
+  expect(component.cmdtyLentilsDry4165).toBe(true);
+  expect(component.cmdtyPeanuts4210).toBe(true);
+
+  // Column 2
+  expect(component.cmdtyDryWholePeas4600).toBe(true);
+  expect(component.cmdtyWool4850).toBe(true);
+  expect(component.cmdtyMohair4860).toBe(true);
+  expect(component.cmdtyChickpeas5100).toBe(true);
+  expect(component.cmdtyExLongStapleCotton6000).toBe(true);
+  expect(component.cmdtyUplandCotton6100).toBe(true);
+  expect(component.cmdtyUplandSeedCotton6300).toBe(true);
+  expect(component.cmdtyExLongStapleSeedCotton6600).toBe(true);
+  expect(component.cmdtySesameSeeds6900).toBe(true);
+
+  // Column 3
+  expect(component.cmdtySunflowerSeeds7100).toBe(true);
+  expect(component.cmdtyCanolaSeed7200).toBe(true);
+  expect(component.cmdtyRapeseed7300).toBe(true);
+  expect(component.cmdtySafflowerSeed7400).toBe(true);
+  expect(component.cmdtyMustardSeed7600).toBe(true);
+  expect(component.cmdtyCottonseed7700).toBe(true);
+  expect(component.cmdtySunflowerSeedNonOil7800).toBe(true);
+  expect(component.cmdtyCrambleOilSeed8000).toBe(true);
+  expect(component.cmdtyHoney8204).toBe(true);
+
+  // Column 4
+  expect(component.cmdtyRawCaneSugar8301).toBe(true);
+  expect(component.cmdtyInProcessCaneSugar8305).toBe(true);
+  expect(component.cmdtyInProcessBeetSugar8306).toBe(true);
+  expect(component.cmdtyRefinedCaneSugar8311).toBe(true);
+  expect(component.cmdtyRoughRice9500).toBe(true);
+});
+```
+
+});
+
+describe(‘reset() Function’, () => {
+beforeEach(() => {
+fixture.detectChanges();
+httpMock.expectOne(’/api/commodities/other’).flush([]);
+});
+
+```
+it('should clear all checkboxes when reset is called', () => {
+  // First select all
+  component.selectAll();
+  component.cmdtyOther = '1';
+
+  // Then reset
+  component.reset();
+
+  // Column 1
+  expect(component.cmdtyWheat1000).toBe(false);
+  expect(component.cmdtyCorn2000).toBe(false);
+  expect(component.cmdtyBarley2200).toBe(false);
+  expect(component.cmdtyOats2300).toBe(false);
+  expect(component.cmdtyFlaxseed2500).toBe(false);
+  expect(component.cmdtySoybeans2600).toBe(false);
+  expect(component.cmdtySorghum2700).toBe(false);
+  expect(component.cmdtyLentilsDry4165).toBe(false);
+  expect(component.cmdtyPeanuts4210).toBe(false);
+
+  // Column 2
+  expect(component.cmdtyDryWholePeas4600).toBe(false);
+  expect(component.cmdtyWool4850).toBe(false);
+  expect(component.cmdtyMohair4860).toBe(false);
+  expect(component.cmdtyChickpeas5100).toBe(false);
+  expect(component.cmdtyExLongStapleCotton6000).toBe(false);
+  expect(component.cmdtyUplandCotton6100).toBe(false);
+  expect(component.cmdtyUplandSeedCotton6300).toBe(false);
+  expect(component.cmdtyExLongStapleSeedCotton6600).toBe(false);
+  expect(component.cmdtySesameSeeds6900).toBe(false);
+
+  // Column 3
+  expect(component.cmdtySunflowerSeeds7100).toBe(false);
+  expect(component.cmdtyCanolaSeed7200).toBe(false);
+  expect(component.cmdtyRapeseed7300).toBe(false);
+  expect(component.cmdtySafflowerSeed7400).toBe(false);
+  expect(component.cmdtyMustardSeed7600).toBe(false);
+  expect(component.cmdtyCottonseed7700).toBe(false);
+  expect(component.cmdtySunflowerSeedNonOil7800).toBe(false);
+  expect(component.cmdtyCrambleOilSeed8000).toBe(false);
+  expect(component.cmdtyHoney8204).toBe(false);
+
+  // Column 4
+  expect(component.cmdtyRawCaneSugar8301).toBe(false);
+  expect(component.cmdtyInProcessCaneSugar8305).toBe(false);
+  expect(component.cmdtyInProcessBeetSugar8306).toBe(false);
+  expect(component.cmdtyRefinedCaneSugar8311).toBe(false);
+  expect(component.cmdtyRoughRice9500).toBe(false);
+  expect(component.cmdtyOther).toBe('');
+  expect(component.errorMessage).toBe('');
+});
+```
+
+});
+
+describe(‘onSubmit() Function’, () => {
+beforeEach(() => {
+fixture.detectChanges();
+httpMock.expectOne(’/api/commodities/other’).flush([
+{ id: ‘1’, name: ‘Alfalfa Seed’, code: ‘0100’ }
+]);
+});
+
+```
+it('should show error when no commodities are selected', () => {
+  component.onSubmit();
+  expect(component.errorMessage).toBe('Please select at least one commodity');
+});
+
+it('should clear error when at least one commodity is selected', () => {
+  component.cmdtyWheat1000 = true;
+  component.onSubmit();
+  expect(component.errorMessage).toBe('');
+});
+
+it('should submit successfully with multiple selections', () => {
+  component.cmdtyWheat1000 = true;
+  component.cmdtyCorn2000 = true;
+  component.cmdtyOther = '1';
+  
+  const consoleSpy = jest.spyOn(console, 'log');
+  component.onSubmit();
+  
+  expect(component.errorMessage).toBe('');
+  expect(consoleSpy).toHaveBeenCalledWith('Submitting commodities:', expect.any(Array));
+});
+```
+
+});
+
+describe(‘onSaveDraft() Function’, () => {
+beforeEach(() => {
+fixture.detectChanges();
+httpMock.expectOne(’/api/commodities/other’).flush([]);
+});
+
+```
+it('should call collectSelectedCommodities when saving draft', () => {
+  component.cmdtyWheat1000 = true;
+  component.cmdtyBarley2200 = true;
+  
+  const consoleSpy = jest.spyOn(console, 'log');
+  component.onSaveDraft();
+  
+  expect(consoleSpy).toHaveBeenCalledWith('Saving draft...');
+});
+```
+
+});
+
+describe(‘collectSelectedCommodities() Integration’, () => {
+beforeEach(() => {
+fixture.detectChanges();
+httpMock.expectOne(’/api/commodities/other’).flush([
+{ id: ‘1’, name: ‘Alfalfa Seed’, code: ‘0100’ },
+{ id: ‘2’, name: ‘Buckwheat’, code: ‘1500’ }
+]);
+});
+
+```
+it('should collect selected commodities from all columns', () => {
+  component.cmdtyWheat1000 = true;
+  component.cmdtyWool4850 = true;
+  component.cmdtySunflowerSeeds7100 = true;
+  component.cmdtyRawCaneSugar8301 = true;
+
+  component.onSubmit();
+
+  expect(component.errorMessage).toBe('');
+});
+
+it('should include selected other commodity in collection', () => {
+  component.cmdtyWheat1000 = true;
+  component.cmdtyOther = '1';
+
+  component.onSubmit();
+
+  expect(component.errorMessage).toBe('');
+});
+
+it('should handle only other commodity selection', () => {
+  component.cmdtyOther = '2';
+
+  component.onSubmit();
+
+  expect(component.errorMessage).toBe('');
+});
+```
+
+});
+});

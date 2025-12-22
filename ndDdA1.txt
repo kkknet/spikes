@@ -1,744 +1,9 @@
-// commodity.component.html
-import { Component } from ‘@angular/core’;
-import { CommonModule } from ‘@angular/common’;
-import { FormsModule } from ‘@angular/forms’;
-
-interface Commodity {
-id: string;
-name: string;
-code: string;
-selected: boolean;
-}
-
-@Component({
-selector: ‘app-commodity’,
-standalone: true,
-imports: [CommonModule, FormsModule],
-templateUrl: ‘./commodity.component.html’,
-styleUrls: [’./commodity.component.css’]
-})
-export class CommodityComponent {
-errorMessage: string = ‘’;
-
-// Column 1 - Grains
-cmdtyWheat1000: boolean = false;
-cmdtyCorn2000: boolean = false;
-cmdtyBarley2200: boolean = false;
-cmdtyOats2300: boolean = false;
-cmdtyFlaxseed2500: boolean = false;
-cmdtySoybeans2600: boolean = false;
-cmdtySorghum2700: boolean = false;
-cmdtyLentilsDry4165: boolean = false;
-cmdtyPeanuts4210: boolean = false;
-
-// Column 2 - Fibers & Seeds
-cmdtyDryWholePeas4600: boolean = false;
-cmdtyWool4850: boolean = false;
-cmdtyMohair4860: boolean = false;
-cmdtyChickpeas5100: boolean = false;
-cmdtyExLongStapleCotton6000: boolean = false;
-cmdtyUplandCotton6100: boolean = false;
-cmdtyUplandSeedCotton6300: boolean = false;
-cmdtyExLongStapleSeedCotton6600: boolean = false;
-cmdtySesameSeeds6900: boolean = false;
-
-// Column 3 - Seeds & Oils
-cmdtySunflowerSeeds7100: boolean = false;
-cmdtyCanolaSeed7200: boolean = false;
-cmdtyRapeseed7300: boolean = false;
-cmdtySafflowerSeed7400: boolean = false;
-cmdtyMustardSeed7600: boolean = false;
-cmdtyCottonseed7700: boolean = false;
-cmdtySunflowerSeedNonOil7800: boolean = false;
-cmdtyCrambleOilSeed8000: boolean = false;
-cmdtyHoney8204: boolean = false;
-
-// Column 4 - Sugar & Rice
-cmdtyRawCaneSugar8301: boolean = false;
-cmdtyInProcessCaneSugar8305: boolean = false;
-cmdtyInProcessBeetSugar8306: boolean = false;
-cmdtyRefinedCaneSugar8311: boolean = false;
-cmdtyRoughRice9500: boolean = false;
-cmdtyOther: string = ‘’;
-
-onSaveDraft(): void {
-console.log(‘Saving draft…’);
-this.collectSelectedCommodities();
-}
-
-onSubmit(): void {
-const selectedCommodities = this.collectSelectedCommodities();
-
-```
-if (selectedCommodities.length === 0) {
-  this.errorMessage = 'Please select at least one commodity';
-  return;
-}
-
-this.errorMessage = '';
-console.log('Submitting commodities:', selectedCommodities);
-```
-
-}
-
-selectAll(): void {
-// Column 1
-this.cmdtyWheat1000 = true;
-this.cmdtyCorn2000 = true;
-this.cmdtyBarley2200 = true;
-this.cmdtyOats2300 = true;
-this.cmdtyFlaxseed2500 = true;
-this.cmdtySoybeans2600 = true;
-this.cmdtySorghum2700 = true;
-this.cmdtyLentilsDry4165 = true;
-this.cmdtyPeanuts4210 = true;
-
-```
-// Column 2
-this.cmdtyDryWholePeas4600 = true;
-this.cmdtyWool4850 = true;
-this.cmdtyMohair4860 = true;
-this.cmdtyChickpeas5100 = true;
-this.cmdtyExLongStapleCotton6000 = true;
-this.cmdtyUplandCotton6100 = true;
-this.cmdtyUplandSeedCotton6300 = true;
-this.cmdtyExLongStapleSeedCotton6600 = true;
-this.cmdtySesameSeeds6900 = true;
-
-// Column 3
-this.cmdtySunflowerSeeds7100 = true;
-this.cmdtyCanolaSeed7200 = true;
-this.cmdtyRapeseed7300 = true;
-this.cmdtySafflowerSeed7400 = true;
-this.cmdtyMustardSeed7600 = true;
-this.cmdtyCottonseed7700 = true;
-this.cmdtySunflowerSeedNonOil7800 = true;
-this.cmdtyCrambleOilSeed8000 = true;
-this.cmdtyHoney8204 = true;
-
-// Column 4
-this.cmdtyRawCaneSugar8301 = true;
-this.cmdtyInProcessCaneSugar8305 = true;
-this.cmdtyInProcessBeetSugar8306 = true;
-this.cmdtyRefinedCaneSugar8311 = true;
-this.cmdtyRoughRice9500 = true;
-```
-
-}
-
-reset(): void {
-// Column 1
-this.cmdtyWheat1000 = false;
-this.cmdtyCorn2000 = false;
-this.cmdtyBarley2200 = false;
-this.cmdtyOats2300 = false;
-this.cmdtyFlaxseed2500 = false;
-this.cmdtySoybeans2600 = false;
-this.cmdtySorghum2700 = false;
-this.cmdtyLentilsDry4165 = false;
-this.cmdtyPeanuts4210 = false;
-
-```
-// Column 2
-this.cmdtyDryWholePeas4600 = false;
-this.cmdtyWool4850 = false;
-this.cmdtyMohair4860 = false;
-this.cmdtyChickpeas5100 = false;
-this.cmdtyExLongStapleCotton6000 = false;
-this.cmdtyUplandCotton6100 = false;
-this.cmdtyUplandSeedCotton6300 = false;
-this.cmdtyExLongStapleSeedCotton6600 = false;
-this.cmdtySesameSeeds6900 = false;
-
-// Column 3
-this.cmdtySunflowerSeeds7100 = false;
-this.cmdtyCanolaSeed7200 = false;
-this.cmdtyRapeseed7300 = false;
-this.cmdtySafflowerSeed7400 = false;
-this.cmdtyMustardSeed7600 = false;
-this.cmdtyCottonseed7700 = false;
-this.cmdtySunflowerSeedNonOil7800 = false;
-this.cmdtyCrambleOilSeed8000 = false;
-this.cmdtyHoney8204 = false;
-
-// Column 4
-this.cmdtyRawCaneSugar8301 = false;
-this.cmdtyInProcessCaneSugar8305 = false;
-this.cmdtyInProcessBeetSugar8306 = false;
-this.cmdtyRefinedCaneSugar8311 = false;
-this.cmdtyRoughRice9500 = false;
-this.cmdtyOther = '';
-
-this.errorMessage = '';
-```
-
-}
-
-private collectSelectedCommodities(): Commodity[] {
-const commodities: Commodity[] = [];
-
-```
-if (this.cmdtyWheat1000) commodities.push({ id: 'cmdtyWheat1000', name: 'Wheat', code: '1000', selected: true });
-if (this.cmdtyCorn2000) commodities.push({ id: 'cmdtyCorn2000', name: 'Corn', code: '2000', selected: true });
-if (this.cmdtyBarley2200) commodities.push({ id: 'cmdtyBarley2200', name: 'Barley', code: '2200', selected: true });
-if (this.cmdtyOats2300) commodities.push({ id: 'cmdtyOats2300', name: 'Oats', code: '2300', selected: true });
-if (this.cmdtyFlaxseed2500) commodities.push({ id: 'cmdtyFlaxseed2500', name: 'Flaxseed', code: '2500', selected: true });
-if (this.cmdtySoybeans2600) commodities.push({ id: 'cmdtySoybeans2600', name: 'Soybeans', code: '2600', selected: true });
-if (this.cmdtySorghum2700) commodities.push({ id: 'cmdtySorghum2700', name: 'Sorghum', code: '2700', selected: true });
-if (this.cmdtyLentilsDry4165) commodities.push({ id: 'cmdtyLentilsDry4165', name: 'Lentils Dry', code: '4165', selected: true });
-if (this.cmdtyPeanuts4210) commodities.push({ id: 'cmdtyPeanuts4210', name: 'Peanuts', code: '4210', selected: true });
-
-if (this.cmdtyDryWholePeas4600) commodities.push({ id: 'cmdtyDryWholePeas4600', name: 'Dry Whole Peas', code: '4600', selected: true });
-if (this.cmdtyWool4850) commodities.push({ id: 'cmdtyWool4850', name: 'Wool', code: '4850', selected: true });
-if (this.cmdtyMohair4860) commodities.push({ id: 'cmdtyMohair4860', name: 'Mohair', code: '4860', selected: true });
-if (this.cmdtyChickpeas5100) commodities.push({ id: 'cmdtyChickpeas5100', name: 'Chickpeas', code: '5100', selected: true });
-if (this.cmdtyExLongStapleCotton6000) commodities.push({ id: 'cmdtyExLongStapleCotton6000', name: 'Ex Long Staple Cotton', code: '6000', selected: true });
-if (this.cmdtyUplandCotton6100) commodities.push({ id: 'cmdtyUplandCotton6100', name: 'Upland Cotton', code: '6100', selected: true });
-if (this.cmdtyUplandSeedCotton6300) commodities.push({ id: 'cmdtyUplandSeedCotton6300', name: 'Upland Seed Cotton', code: '6300', selected: true });
-if (this.cmdtyExLongStapleSeedCotton6600) commodities.push({ id: 'cmdtyExLongStapleSeedCotton6600', name: 'Ex Long Staple Seed Cotton', code: '6600', selected: true });
-if (this.cmdtySesameSeeds6900) commodities.push({ id: 'cmdtySesameSeeds6900', name: 'Sesame Seeds', code: '6900', selected: true });
-
-if (this.cmdtySunflowerSeeds7100) commodities.push({ id: 'cmdtySunflowerSeeds7100', name: 'Sunflower Seeds', code: '7100', selected: true });
-if (this.cmdtyCanolaSeed7200) commodities.push({ id: 'cmdtyCanolaSeed7200', name: 'Canola Seed', code: '7200', selected: true });
-if (this.cmdtyRapeseed7300) commodities.push({ id: 'cmdtyRapeseed7300', name: 'Rapeseed', code: '7300', selected: true });
-if (this.cmdtySafflowerSeed7400) commodities.push({ id: 'cmdtySafflowerSeed7400', name: 'Safflower Seed', code: '7400', selected: true });
-if (this.cmdtyMustardSeed7600) commodities.push({ id: 'cmdtyMustardSeed7600', name: 'Mustard Seed', code: '7600', selected: true });
-if (this.cmdtyCottonseed7700) commodities.push({ id: 'cmdtyCottonseed7700', name: 'Cottonseed', code: '7700', selected: true });
-if (this.cmdtySunflowerSeedNonOil7800) commodities.push({ id: 'cmdtySunflowerSeedNonOil7800', name: 'Sunflower Seed Non-Oil', code: '7800', selected: true });
-if (this.cmdtyCrambleOilSeed8000) commodities.push({ id: 'cmdtyCrambleOilSeed8000', name: 'Cramble Oil Seed', code: '8000', selected: true });
-if (this.cmdtyHoney8204) commodities.push({ id: 'cmdtyHoney8204', name: 'Honey', code: '8204', selected: true });
-
-if (this.cmdtyRawCaneSugar8301) commodities.push({ id: 'cmdtyRawCaneSugar8301', name: 'Raw Cane Sugar', code: '8301', selected: true });
-if (this.cmdtyInProcessCaneSugar8305) commodities.push({ id: 'cmdtyInProcessCaneSugar8305', name: 'In Process Cane Sugar', code: '8305', selected: true });
-if (this.cmdtyInProcessBeetSugar8306) commodities.push({ id: 'cmdtyInProcessBeetSugar8306', name: 'In Process Beet Sugar', code: '8306', selected: true });
-if (this.cmdtyRefinedCaneSugar8311) commodities.push({ id: 'cmdtyRefinedCaneSugar8311', name: 'Refined Cane Sugar', code: '8311', selected: true });
-if (this.cmdtyRoughRice9500) commodities.push({ id: 'cmdtyRoughRice9500', name: 'Rough Rice', code: '9500', selected: true });
-
-if (this.cmdtyOther && this.cmdtyOther.trim()) {
-  commodities.push({ id: 'cmdtyOther', name: this.cmdtyOther, code: 'OTHER', selected: true });
-}
-
-return commodities;
-```
-
-}
-}
-
-
-
-
-
-
-
-
-
-
-<!-- commodity.component.html -->
-
-<h2 class="page-title">Commodities</h2>
-
-<div class="search-error" role="alert" aria-live="assertive" *ngIf="errorMessage">
-  <span class="error-icon" aria-hidden="true">⚠️</span>
-  {{ errorMessage }}
-</div>
-
-<div class="commodity-grid">
-  <!-- Column 1: Grains -->
-  <div class="commodity-column">
-    <div class="fsa-field">
-      <label class="fsa-field__label" for="cmdtyWheat1000">Wheat (1000):</label>
-      <input class="fsa-input fsa-field__item"
-             id="cmdtyWheat1000"
-             name="cmdtyWheat1000"
-             aria-describedby="cmdtyWheat1000"
-             [(ngModel)]="cmdtyWheat1000"
-             type="checkbox">
-    </div>
-
-```
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyCorn2000">Corn (2000):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyCorn2000"
-         name="cmdtyCorn2000"
-         [(ngModel)]="cmdtyCorn2000"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyBarley2200">Barley (2200):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyBarley2200"
-         name="cmdtyBarley2200"
-         [(ngModel)]="cmdtyBarley2200"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyOats2300">Oats (2300):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyOats2300"
-         name="cmdtyOats2300"
-         [(ngModel)]="cmdtyOats2300"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyFlaxseed2500">Flaxseed (2500):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyFlaxseed2500"
-         name="cmdtyFlaxseed2500"
-         [(ngModel)]="cmdtyFlaxseed2500"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtySoybeans2600">Soybeans (2600):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtySoybeans2600"
-         name="cmdtySoybeans2600"
-         [(ngModel)]="cmdtySoybeans2600"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtySorghum2700">Sorghum (2700):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtySorghum2700"
-         name="cmdtySorghum2700"
-         [(ngModel)]="cmdtySorghum2700"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyLentilsDry4165">Lentils Dry (4165):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyLentilsDry4165"
-         name="cmdtyLentilsDry4165"
-         [(ngModel)]="cmdtyLentilsDry4165"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyPeanuts4210">Peanuts (4210):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyPeanuts4210"
-         name="cmdtyPeanuts4210"
-         [(ngModel)]="cmdtyPeanuts4210"
-         type="checkbox">
-</div>
-```
-
-  </div>
-
-  <!-- Column 2: Fibers & Seeds -->
-
-  <div class="commodity-column">
-    <div class="fsa-field">
-      <label class="fsa-field__label" for="cmdtyDryWholePeas4600">Dry Whole Peas (4600):</label>
-      <input class="fsa-input fsa-field__item"
-             id="cmdtyDryWholePeas4600"
-             name="cmdtyDryWholePeas4600"
-             [(ngModel)]="cmdtyDryWholePeas4600"
-             type="checkbox">
-    </div>
-
-```
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyWool4850">Wool (4850):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyWool4850"
-         name="cmdtyWool4850"
-         [(ngModel)]="cmdtyWool4850"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyMohair4860">Mohair (4860):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyMohair4860"
-         name="cmdtyMohair4860"
-         [(ngModel)]="cmdtyMohair4860"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyChickpeas5100">Chickpeas (5100):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyChickpeas5100"
-         name="cmdtyChickpeas5100"
-         [(ngModel)]="cmdtyChickpeas5100"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyExLongStapleCotton6000">Ex Long Staple Cotton (6000):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyExLongStapleCotton6000"
-         name="cmdtyExLongStapleCotton6000"
-         [(ngModel)]="cmdtyExLongStapleCotton6000"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyUplandCotton6100">Upland Cotton (6100):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyUplandCotton6100"
-         name="cmdtyUplandCotton6100"
-         [(ngModel)]="cmdtyUplandCotton6100"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyUplandSeedCotton6300">Upland Seed Cotton (6300):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyUplandSeedCotton6300"
-         name="cmdtyUplandSeedCotton6300"
-         [(ngModel)]="cmdtyUplandSeedCotton6300"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyExLongStapleSeedCotton6600">Ex Long Staple Seed Cotton (6600):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyExLongStapleSeedCotton6600"
-         name="cmdtyExLongStapleSeedCotton6600"
-         [(ngModel)]="cmdtyExLongStapleSeedCotton6600"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtySesameSeeds6900">Sesame Seeds (6900):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtySesameSeeds6900"
-         name="cmdtySesameSeeds6900"
-         [(ngModel)]="cmdtySesameSeeds6900"
-         type="checkbox">
-</div>
-```
-
-  </div>
-
-  <!-- Column 3: Seeds & Oils -->
-
-  <div class="commodity-column">
-    <div class="fsa-field">
-      <label class="fsa-field__label" for="cmdtySunflowerSeeds7100">Sunflower Seeds (7100):</label>
-      <input class="fsa-input fsa-field__item"
-             id="cmdtySunflowerSeeds7100"
-             name="cmdtySunflowerSeeds7100"
-             [(ngModel)]="cmdtySunflowerSeeds7100"
-             type="checkbox">
-    </div>
-
-```
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyCanolaSeed7200">Canola Seed (7200):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyCanolaSeed7200"
-         name="cmdtyCanolaSeed7200"
-         [(ngModel)]="cmdtyCanolaSeed7200"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyRapeseed7300">Rapeseed (7300):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyRapeseed7300"
-         name="cmdtyRapeseed7300"
-         [(ngModel)]="cmdtyRapeseed7300"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtySafflowerSeed7400">Safflower Seed (7400):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtySafflowerSeed7400"
-         name="cmdtySafflowerSeed7400"
-         [(ngModel)]="cmdtySafflowerSeed7400"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyMustardSeed7600">Mustard Seed (7600):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyMustardSeed7600"
-         name="cmdtyMustardSeed7600"
-         [(ngModel)]="cmdtyMustardSeed7600"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyCottonseed7700">Cottonseed (7700):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyCottonseed7700"
-         name="cmdtyCottonseed7700"
-         [(ngModel)]="cmdtyCottonseed7700"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtySunflowerSeedNonOil7800">Sunflower Seed Non-Oil (7800):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtySunflowerSeedNonOil7800"
-         name="cmdtySunflowerSeedNonOil7800"
-         [(ngModel)]="cmdtySunflowerSeedNonOil7800"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyCrambleOilSeed8000">Cramble Oil Seed (8000):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyCrambleOilSeed8000"
-         name="cmdtyCrambleOilSeed8000"
-         [(ngModel)]="cmdtyCrambleOilSeed8000"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyHoney8204">Honey (8204):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyHoney8204"
-         name="cmdtyHoney8204"
-         [(ngModel)]="cmdtyHoney8204"
-         type="checkbox">
-</div>
-```
-
-  </div>
-
-  <!-- Column 4: Sugar & Rice -->
-
-  <div class="commodity-column">
-    <div class="fsa-field">
-      <label class="fsa-field__label" for="cmdtyRawCaneSugar8301">Raw Cane Sugar (8301):</label>
-      <input class="fsa-input fsa-field__item"
-             id="cmdtyRawCaneSugar8301"
-             name="cmdtyRawCaneSugar8301"
-             [(ngModel)]="cmdtyRawCaneSugar8301"
-             type="checkbox">
-    </div>
-
-```
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyInProcessCaneSugar8305">In Process Cane Sugar (8305):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyInProcessCaneSugar8305"
-         name="cmdtyInProcessCaneSugar8305"
-         [(ngModel)]="cmdtyInProcessCaneSugar8305"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyInProcessBeetSugar8306">In Process Beet Sugar (8306):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyInProcessBeetSugar8306"
-         name="cmdtyInProcessBeetSugar8306"
-         [(ngModel)]="cmdtyInProcessBeetSugar8306"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyRefinedCaneSugar8311">Refined Cane Sugar (8311):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyRefinedCaneSugar8311"
-         name="cmdtyRefinedCaneSugar8311"
-         [(ngModel)]="cmdtyRefinedCaneSugar8311"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyRoughRice9500">Rough Rice (9500):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyRoughRice9500"
-         name="cmdtyRoughRice9500"
-         [(ngModel)]="cmdtyRoughRice9500"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyOther">Other:</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyOther"
-         name="cmdtyOther"
-         [(ngModel)]="cmdtyOther"
-         type="text"
-         placeholder="Specify other commodity">
-</div>
-
-<div class="search-actions">
-  <button (click)="onSaveDraft()" class="fsa-btn fsa-btn--primary">Save Draft</button>
-  <button (click)="onSubmit()" class="fsa-btn fsa-btn--secondary">Submit</button>
-  <button (click)="selectAll()" class="fsa-btn fsa-btn--secondary">Select All</button>
-  <button (click)="reset()" class="fsa-btn fsa-btn--secondary">Cancel</button>
-</div>
-```
-
-  </div>
-</div>
-
-
-
-
-
-
-
-
-
-/* commodity.component.css */
-
-.page-title {
-font-size: 24px;
-font-weight: 600;
-margin-bottom: 20px;
-color: #333;
-}
-
-.search-error {
-background-color: #fff4e5;
-border: 1px solid #ffb300;
-border-radius: 4px;
-padding: 12px 16px;
-margin-bottom: 20px;
-display: flex;
-align-items: center;
-gap: 8px;
-color: #856404;
-}
-
-.error-icon {
-font-size: 18px;
-}
-
-.commodity-grid {
-display: grid;
-grid-template-columns: repeat(4, 1fr);
-gap: 20px;
-padding: 20px;
-background-color: #f8f9fa;
-border-radius: 4px;
-}
-
-.commodity-column {
-display: flex;
-flex-direction: column;
-gap: 12px;
-}
-
-.fsa-field {
-display: flex;
-align-items: center;
-gap: 8px;
-background-color: white;
-padding: 8px 12px;
-border-radius: 4px;
-border: 1px solid #e0e0e0;
-}
-
-.fsa-field__label {
-flex: 1;
-font-size: 14px;
-color: #333;
-margin: 0;
-cursor: pointer;
-}
-
-.fsa-input.fsa-field__item[type=“checkbox”] {
-width: 18px;
-height: 18px;
-cursor: pointer;
-flex-shrink: 0;
-}
-
-.fsa-input.fsa-field__item[type=“text”] {
-flex: 1;
-padding: 6px 8px;
-border: 1px solid #ccc;
-border-radius: 4px;
-font-size: 14px;
-}
-
-.fsa-input.fsa-field__item[type=“text”]:focus {
-outline: none;
-border-color: #0066cc;
-box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
-}
-
-.search-actions {
-display: flex;
-flex-direction: column;
-gap: 10px;
-margin-top: 20px;
-}
-
-.fsa-btn {
-padding: 10px 16px;
-font-size: 14px;
-font-weight: 500;
-border-radius: 4px;
-border: none;
-cursor: pointer;
-transition: all 0.2s;
-width: 100%;
-}
-
-.fsa-btn–primary {
-background-color: #0066cc;
-color: white;
-}
-
-.fsa-btn–primary:hover {
-background-color: #0052a3;
-}
-
-.fsa-btn–primary:active {
-background-color: #003d7a;
-}
-
-.fsa-btn–secondary {
-background-color: #6c757d;
-color: white;
-}
-
-.fsa-btn–secondary:hover {
-background-color: #5a6268;
-}
-
-.fsa-btn–secondary:active {
-background-color: #545b62;
-}
-
-.fsa-btn:disabled {
-opacity: 0.5;
-cursor: not-allowed;
-}
-
-@media (max-width: 1200px) {
-.commodity-grid {
-grid-template-columns: repeat(2, 1fr);
-}
-}
-
-@media (max-width: 768px) {
-.commodity-grid {
-grid-template-columns: 1fr;
-}
-}
-
-
-
-
-
-
-
-
-
-
 // commodity.component.ts
 import { Component, OnInit } from ‘@angular/core’;
 import { CommonModule } from ‘@angular/common’;
 import { FormsModule } from ‘@angular/forms’;
 import { HttpClient, HttpClientModule } from ‘@angular/common/http’;
+import { Commodities } from ‘./commodities.enum’;
 
 interface Commodity {
 id: string;
@@ -749,8 +14,8 @@ selected: boolean;
 
 interface OtherCommodity {
 id: string;
-name: string;
-code: string;
+commodityName: string;
+commodityCode: string;
 }
 
 @Component({
@@ -839,14 +104,14 @@ this.http.get<OtherCommodity[]>(apiUrl).subscribe({
 // Mock data for development/testing
 private getMockOtherCommodities(): OtherCommodity[] {
 return [
-{ id: ‘1’, name: ‘Alfalfa Seed’, code: ‘0100’ },
-{ id: ‘2’, name: ‘Buckwheat’, code: ‘1500’ },
-{ id: ‘3’, name: ‘Grass Seed’, code: ‘3000’ },
-{ id: ‘4’, name: ‘Millet’, code: ‘4500’ },
-{ id: ‘5’, name: ‘Quinoa’, code: ‘5500’ },
-{ id: ‘6’, name: ‘Rye’, code: ‘6500’ },
-{ id: ‘7’, name: ‘Speltz’, code: ‘7500’ },
-{ id: ‘8’, name: ‘Triticale’, code: ‘8500’ }
+{ id: ‘1’, commodityName: ‘Alfalfa Seed’, commodityCode: ‘0100’ },
+{ id: ‘2’, commodityName: ‘Buckwheat’, commodityCode: ‘1500’ },
+{ id: ‘3’, commodityName: ‘Grass Seed’, commodityCode: ‘3000’ },
+{ id: ‘4’, commodityName: ‘Millet’, commodityCode: ‘4500’ },
+{ id: ‘5’, commodityName: ‘Quinoa’, commodityCode: ‘5500’ },
+{ id: ‘6’, commodityName: ‘Rye’, commodityCode: ‘6500’ },
+{ id: ‘7’, commodityName: ‘Speltz’, commodityCode: ‘7500’ },
+{ id: ‘8’, commodityName: ‘Triticale’, commodityCode: ‘8500’ }
 ];
 }
 
@@ -967,49 +232,214 @@ private collectSelectedCommodities(): Commodity[] {
 const commodities: Commodity[] = [];
 
 ```
-if (this.cmdtyWheat1000) commodities.push({ id: 'cmdtyWheat1000', name: 'Wheat', code: '1000', selected: true });
-if (this.cmdtyCorn2000) commodities.push({ id: 'cmdtyCorn2000', name: 'Corn', code: '2000', selected: true });
-if (this.cmdtyBarley2200) commodities.push({ id: 'cmdtyBarley2200', name: 'Barley', code: '2200', selected: true });
-if (this.cmdtyOats2300) commodities.push({ id: 'cmdtyOats2300', name: 'Oats', code: '2300', selected: true });
-if (this.cmdtyFlaxseed2500) commodities.push({ id: 'cmdtyFlaxseed2500', name: 'Flaxseed', code: '2500', selected: true });
-if (this.cmdtySoybeans2600) commodities.push({ id: 'cmdtySoybeans2600', name: 'Soybeans', code: '2600', selected: true });
-if (this.cmdtySorghum2700) commodities.push({ id: 'cmdtySorghum2700', name: 'Sorghum', code: '2700', selected: true });
-if (this.cmdtyLentilsDry4165) commodities.push({ id: 'cmdtyLentilsDry4165', name: 'Lentils Dry', code: '4165', selected: true });
-if (this.cmdtyPeanuts4210) commodities.push({ id: 'cmdtyPeanuts4210', name: 'Peanuts', code: '4210', selected: true });
+// Column 1 - Grains
+if (this.cmdtyWheat1000) commodities.push({ 
+  id: Commodities.CMDTY_WHEAT_ID, 
+  name: Commodities.CMDTY_WHEAT_LABEL_NAME, 
+  code: Commodities.CMDTY_WHEAT_CODE, 
+  selected: true 
+});
+if (this.cmdtyCorn2000) commodities.push({ 
+  id: Commodities.CMDTY_CORN_ID, 
+  name: Commodities.CMDTY_CORN_LABEL_NAME, 
+  code: Commodities.CMDTY_CORN_CODE, 
+  selected: true 
+});
+if (this.cmdtyBarley2200) commodities.push({ 
+  id: Commodities.CMDTY_BARLEY_ID, 
+  name: Commodities.CMDTY_BARLEY_LABEL_NAME, 
+  code: Commodities.CMDTY_BARLEY_CODE, 
+  selected: true 
+});
+if (this.cmdtyOats2300) commodities.push({ 
+  id: Commodities.CMDTY_OATS_ID, 
+  name: Commodities.CMDTY_OATS_LABEL_NAME, 
+  code: Commodities.CMDTY_OATS_CODE, 
+  selected: true 
+});
+if (this.cmdtyFlaxseed2500) commodities.push({ 
+  id: Commodities.CMDTY_FLAXSEED_ID, 
+  name: Commodities.CMDTY_FLAXSEED_LABEL_NAME, 
+  code: Commodities.CMDTY_FLAXSEED_CODE, 
+  selected: true 
+});
+if (this.cmdtySoybeans2600) commodities.push({ 
+  id: Commodities.CMDTY_SOYBEANS_ID, 
+  name: Commodities.CMDTY_SOYBEANS_LABEL_NAME, 
+  code: Commodities.CMDTY_SOYBEANS_CODE, 
+  selected: true 
+});
+if (this.cmdtySorghum2700) commodities.push({ 
+  id: Commodities.CMDTY_SORGHUM_ID, 
+  name: Commodities.CMDTY_SORGHUM_LABEL_NAME, 
+  code: Commodities.CMDTY_SORGHUM_CODE, 
+  selected: true 
+});
+if (this.cmdtyLentilsDry4165) commodities.push({ 
+  id: Commodities.CMDTY_LENTILS_DRY_ID, 
+  name: Commodities.CMDTY_LENTILS_DRY_LABEL_NAME, 
+  code: Commodities.CMDTY_LENTILS_DRY_CODE, 
+  selected: true 
+});
+if (this.cmdtyPeanuts4210) commodities.push({ 
+  id: Commodities.CMDTY_PEANUTS_ID, 
+  name: Commodities.CMDTY_PEANUTS_LABEL_NAME, 
+  code: Commodities.CMDTY_PEANUTS_CODE, 
+  selected: true 
+});
 
-if (this.cmdtyDryWholePeas4600) commodities.push({ id: 'cmdtyDryWholePeas4600', name: 'Dry Whole Peas', code: '4600', selected: true });
-if (this.cmdtyWool4850) commodities.push({ id: 'cmdtyWool4850', name: 'Wool', code: '4850', selected: true });
-if (this.cmdtyMohair4860) commodities.push({ id: 'cmdtyMohair4860', name: 'Mohair', code: '4860', selected: true });
-if (this.cmdtyChickpeas5100) commodities.push({ id: 'cmdtyChickpeas5100', name: 'Chickpeas', code: '5100', selected: true });
-if (this.cmdtyExLongStapleCotton6000) commodities.push({ id: 'cmdtyExLongStapleCotton6000', name: 'Ex Long Staple Cotton', code: '6000', selected: true });
-if (this.cmdtyUplandCotton6100) commodities.push({ id: 'cmdtyUplandCotton6100', name: 'Upland Cotton', code: '6100', selected: true });
-if (this.cmdtyUplandSeedCotton6300) commodities.push({ id: 'cmdtyUplandSeedCotton6300', name: 'Upland Seed Cotton', code: '6300', selected: true });
-if (this.cmdtyExLongStapleSeedCotton6600) commodities.push({ id: 'cmdtyExLongStapleSeedCotton6600', name: 'Ex Long Staple Seed Cotton', code: '6600', selected: true });
-if (this.cmdtySesameSeeds6900) commodities.push({ id: 'cmdtySesameSeeds6900', name: 'Sesame Seeds', code: '6900', selected: true });
+// Column 2 - Fibers & Seeds
+if (this.cmdtyDryWholePeas4600) commodities.push({ 
+  id: Commodities.CMDTY_DRY_WHOLE_PEAS_ID, 
+  name: Commodities.CMDTY_DRY_WHOLE_PEAS_LABEL_NAME, 
+  code: Commodities.CMDTY_DRY_WHOLE_PEAS_CODE, 
+  selected: true 
+});
+if (this.cmdtyWool4850) commodities.push({ 
+  id: Commodities.CMDTY_WOOL_ID, 
+  name: Commodities.CMDTY_WOOL_LABEL_NAME, 
+  code: Commodities.CMDTY_WOOL_CODE, 
+  selected: true 
+});
+if (this.cmdtyMohair4860) commodities.push({ 
+  id: Commodities.CMDTY_MOHAIR_ID, 
+  name: Commodities.CMDTY_MOHAIR_LABEL_NAME, 
+  code: Commodities.CMDTY_MOHAIR_CODE, 
+  selected: true 
+});
+if (this.cmdtyChickpeas5100) commodities.push({ 
+  id: Commodities.CMDTY_CHICKPEAS_ID, 
+  name: Commodities.CMDTY_CHICKPEAS_LABEL_NAME, 
+  code: Commodities.CMDTY_CHICKPEAS_CODE, 
+  selected: true 
+});
+if (this.cmdtyExLongStapleCotton6000) commodities.push({ 
+  id: Commodities.CMDTY_EX_LONG_STAPLE_COTTON_ID, 
+  name: Commodities.CMDTY_EX_LONG_STAPLE_COTTON_LABEL_NAME, 
+  code: Commodities.CMDTY_EX_LONG_STAPLE_COTTON_CODE, 
+  selected: true 
+});
+if (this.cmdtyUplandCotton6100) commodities.push({ 
+  id: Commodities.CMDTY_UPLAND_COTTON_ID, 
+  name: Commodities.CMDTY_UPLAND_COTTON_LABEL_NAME, 
+  code: Commodities.CMDTY_UPLAND_COTTON_CODE, 
+  selected: true 
+});
+if (this.cmdtyUplandSeedCotton6300) commodities.push({ 
+  id: Commodities.CMDTY_UPLAND_SEED_COTTON_ID, 
+  name: Commodities.CMDTY_UPLAND_SEED_COTTON_LABEL_NAME, 
+  code: Commodities.CMDTY_UPLAND_SEED_COTTON_CODE, 
+  selected: true 
+});
+if (this.cmdtyExLongStapleSeedCotton6600) commodities.push({ 
+  id: Commodities.CMDTY_EX_LONG_STAPLE_SEED_COTTON_ID, 
+  name: Commodities.CMDTY_EX_LONG_STAPLE_SEED_COTTON_LABEL_NAME, 
+  code: Commodities.CMDTY_EX_LONG_STAPLE_SEED_COTTON_CODE, 
+  selected: true 
+});
+if (this.cmdtySesameSeeds6900) commodities.push({ 
+  id: Commodities.CMDTY_SESAME_SEEDS_ID, 
+  name: Commodities.CMDTY_SESAME_SEEDS_LABEL_NAME, 
+  code: Commodities.CMDTY_SESAME_SEEDS_CODE, 
+  selected: true 
+});
 
-if (this.cmdtySunflowerSeeds7100) commodities.push({ id: 'cmdtySunflowerSeeds7100', name: 'Sunflower Seeds', code: '7100', selected: true });
-if (this.cmdtyCanolaSeed7200) commodities.push({ id: 'cmdtyCanolaSeed7200', name: 'Canola Seed', code: '7200', selected: true });
-if (this.cmdtyRapeseed7300) commodities.push({ id: 'cmdtyRapeseed7300', name: 'Rapeseed', code: '7300', selected: true });
-if (this.cmdtySafflowerSeed7400) commodities.push({ id: 'cmdtySafflowerSeed7400', name: 'Safflower Seed', code: '7400', selected: true });
-if (this.cmdtyMustardSeed7600) commodities.push({ id: 'cmdtyMustardSeed7600', name: 'Mustard Seed', code: '7600', selected: true });
-if (this.cmdtyCottonseed7700) commodities.push({ id: 'cmdtyCottonseed7700', name: 'Cottonseed', code: '7700', selected: true });
-if (this.cmdtySunflowerSeedNonOil7800) commodities.push({ id: 'cmdtySunflowerSeedNonOil7800', name: 'Sunflower Seed Non-Oil', code: '7800', selected: true });
-if (this.cmdtyCrambleOilSeed8000) commodities.push({ id: 'cmdtyCrambleOilSeed8000', name: 'Cramble Oil Seed', code: '8000', selected: true });
-if (this.cmdtyHoney8204) commodities.push({ id: 'cmdtyHoney8204', name: 'Honey', code: '8204', selected: true });
+// Column 3 - Seeds & Oils
+if (this.cmdtySunflowerSeeds7100) commodities.push({ 
+  id: Commodities.CMDTY_SUNFLOWER_SEEDS_ID, 
+  name: Commodities.CMDTY_SUNFLOWER_SEEDS_LABEL_NAME, 
+  code: Commodities.CMDTY_SUNFLOWER_SEEDS_CODE, 
+  selected: true 
+});
+if (this.cmdtyCanolaSeed7200) commodities.push({ 
+  id: Commodities.CMDTY_CANOLA_SEED_ID, 
+  name: Commodities.CMDTY_CANOLA_SEED_LABEL_NAME, 
+  code: Commodities.CMDTY_CANOLA_SEED_CODE, 
+  selected: true 
+});
+if (this.cmdtyRapeseed7300) commodities.push({ 
+  id: Commodities.CMDTY_RAPESEED_ID, 
+  name: Commodities.CMDTY_RAPESEED_LABEL_NAME, 
+  code: Commodities.CMDTY_RAPESEED_CODE, 
+  selected: true 
+});
+if (this.cmdtySafflowerSeed7400) commodities.push({ 
+  id: Commodities.CMDTY_SAFFLOWER_SEED_ID, 
+  name: Commodities.CMDTY_SAFFLOWER_SEED_LABEL_NAME, 
+  code: Commodities.CMDTY_SAFFLOWER_SEED_CODE, 
+  selected: true 
+});
+if (this.cmdtyMustardSeed7600) commodities.push({ 
+  id: Commodities.CMDTY_MUSTARD_SEED_ID, 
+  name: Commodities.CMDTY_MUSTARD_SEED_LABEL_NAME, 
+  code: Commodities.CMDTY_MUSTARD_SEED_CODE, 
+  selected: true 
+});
+if (this.cmdtyCottonseed7700) commodities.push({ 
+  id: Commodities.CMDTY_COTTONSEED_ID, 
+  name: Commodities.CMDTY_COTTONSEED_LABEL_NAME, 
+  code: Commodities.CMDTY_COTTONSEED_CODE, 
+  selected: true 
+});
+if (this.cmdtySunflowerSeedNonOil7800) commodities.push({ 
+  id: Commodities.CMDTY_SUNFLOWER_SEED_NON_OIL_ID, 
+  name: Commodities.CMDTY_SUNFLOWER_SEED_NON_OIL_LABEL_NAME, 
+  code: Commodities.CMDTY_SUNFLOWER_SEED_NON_OIL_CODE, 
+  selected: true 
+});
+if (this.cmdtyCrambleOilSeed8000) commodities.push({ 
+  id: Commodities.CMDTY_CRAMBLE_OIL_SEED_ID, 
+  name: Commodities.CMDTY_CRAMBLE_OIL_SEED_LABEL_NAME, 
+  code: Commodities.CMDTY_CRAMBLE_OIL_SEED_CODE, 
+  selected: true 
+});
+if (this.cmdtyHoney8204) commodities.push({ 
+  id: Commodities.CMDTY_HONEY_ID, 
+  name: Commodities.CMDTY_HONEY_LABEL_NAME, 
+  code: Commodities.CMDTY_HONEY_CODE, 
+  selected: true 
+});
 
-if (this.cmdtyRawCaneSugar8301) commodities.push({ id: 'cmdtyRawCaneSugar8301', name: 'Raw Cane Sugar', code: '8301', selected: true });
-if (this.cmdtyInProcessCaneSugar8305) commodities.push({ id: 'cmdtyInProcessCaneSugar8305', name: 'In Process Cane Sugar', code: '8305', selected: true });
-if (this.cmdtyInProcessBeetSugar8306) commodities.push({ id: 'cmdtyInProcessBeetSugar8306', name: 'In Process Beet Sugar', code: '8306', selected: true });
-if (this.cmdtyRefinedCaneSugar8311) commodities.push({ id: 'cmdtyRefinedCaneSugar8311', name: 'Refined Cane Sugar', code: '8311', selected: true });
-if (this.cmdtyRoughRice9500) commodities.push({ id: 'cmdtyRoughRice9500', name: 'Rough Rice', code: '9500', selected: true });
+// Column 4 - Sugar & Rice
+if (this.cmdtyRawCaneSugar8301) commodities.push({ 
+  id: Commodities.CMDTY_RAW_CANE_SUGAR_ID, 
+  name: Commodities.CMDTY_RAW_CANE_SUGAR_LABEL_NAME, 
+  code: Commodities.CMDTY_RAW_CANE_SUGAR_CODE, 
+  selected: true 
+});
+if (this.cmdtyInProcessCaneSugar8305) commodities.push({ 
+  id: Commodities.CMDTY_IN_PROCESS_CANE_SUGAR_ID, 
+  name: Commodities.CMDTY_IN_PROCESS_CANE_SUGAR_LABEL_NAME, 
+  code: Commodities.CMDTY_IN_PROCESS_CANE_SUGAR_CODE, 
+  selected: true 
+});
+if (this.cmdtyInProcessBeetSugar8306) commodities.push({ 
+  id: Commodities.CMDTY_IN_PROCESS_BEET_SUGAR_ID, 
+  name: Commodities.CMDTY_IN_PROCESS_BEET_SUGAR_LABEL_NAME, 
+  code: Commodities.CMDTY_IN_PROCESS_BEET_SUGAR_CODE, 
+  selected: true 
+});
+if (this.cmdtyRefinedCaneSugar8311) commodities.push({ 
+  id: Commodities.CMDTY_REFINED_CANE_SUGAR_ID, 
+  name: Commodities.CMDTY_REFINED_CANE_SUGAR_LABEL_NAME, 
+  code: Commodities.CMDTY_REFINED_CANE_SUGAR_CODE, 
+  selected: true 
+});
+if (this.cmdtyRoughRice9500) commodities.push({ 
+  id: Commodities.CMDTY_ROUGH_RICE_ID, 
+  name: Commodities.CMDTY_ROUGH_RICE_LABEL_NAME, 
+  code: Commodities.CMDTY_ROUGH_RICE_CODE, 
+  selected: true 
+});
 
+// Other
 if (this.cmdtyOther && this.cmdtyOther.trim()) {
   const selectedOther = this.otherCommodities.find(c => c.id === this.cmdtyOther);
   if (selectedOther) {
     commodities.push({ 
       id: selectedOther.id, 
-      name: selectedOther.name, 
-      code: selectedOther.code, 
+      name: selectedOther.commodityName, 
+      code: selectedOther.commodityCode, 
       selected: true 
     });
   }
@@ -1020,546 +450,3 @@ return commodities;
 
 }
 }
-
-
-
-
-
-
-
-
-
-
-
-<!-- commodity.component.html -->
-
-<h2 class="page-title">Commodities</h2>
-
-<div class="search-error" role="alert" aria-live="assertive" *ngIf="errorMessage">
-  <span class="error-icon" aria-hidden="true">⚠️</span>
-  {{ errorMessage }}
-</div>
-
-<div class="commodity-grid">
-  <!-- Column 1: Grains -->
-  <div class="commodity-column">
-    <div class="fsa-field">
-      <label class="fsa-field__label" for="cmdtyWheat1000">Wheat (1000):</label>
-      <input class="fsa-input fsa-field__item"
-             id="cmdtyWheat1000"
-             name="cmdtyWheat1000"
-             aria-describedby="cmdtyWheat1000"
-             [(ngModel)]="cmdtyWheat1000"
-             type="checkbox">
-    </div>
-
-```
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyCorn2000">Corn (2000):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyCorn2000"
-         name="cmdtyCorn2000"
-         [(ngModel)]="cmdtyCorn2000"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyBarley2200">Barley (2200):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyBarley2200"
-         name="cmdtyBarley2200"
-         [(ngModel)]="cmdtyBarley2200"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyOats2300">Oats (2300):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyOats2300"
-         name="cmdtyOats2300"
-         [(ngModel)]="cmdtyOats2300"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyFlaxseed2500">Flaxseed (2500):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyFlaxseed2500"
-         name="cmdtyFlaxseed2500"
-         [(ngModel)]="cmdtyFlaxseed2500"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtySoybeans2600">Soybeans (2600):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtySoybeans2600"
-         name="cmdtySoybeans2600"
-         [(ngModel)]="cmdtySoybeans2600"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtySorghum2700">Sorghum (2700):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtySorghum2700"
-         name="cmdtySorghum2700"
-         [(ngModel)]="cmdtySorghum2700"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyLentilsDry4165">Lentils Dry (4165):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyLentilsDry4165"
-         name="cmdtyLentilsDry4165"
-         [(ngModel)]="cmdtyLentilsDry4165"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyPeanuts4210">Peanuts (4210):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyPeanuts4210"
-         name="cmdtyPeanuts4210"
-         [(ngModel)]="cmdtyPeanuts4210"
-         type="checkbox">
-</div>
-```
-
-  </div>
-
-  <!-- Column 2: Fibers & Seeds -->
-
-  <div class="commodity-column">
-    <div class="fsa-field">
-      <label class="fsa-field__label" for="cmdtyDryWholePeas4600">Dry Whole Peas (4600):</label>
-      <input class="fsa-input fsa-field__item"
-             id="cmdtyDryWholePeas4600"
-             name="cmdtyDryWholePeas4600"
-             [(ngModel)]="cmdtyDryWholePeas4600"
-             type="checkbox">
-    </div>
-
-```
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyWool4850">Wool (4850):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyWool4850"
-         name="cmdtyWool4850"
-         [(ngModel)]="cmdtyWool4850"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyMohair4860">Mohair (4860):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyMohair4860"
-         name="cmdtyMohair4860"
-         [(ngModel)]="cmdtyMohair4860"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyChickpeas5100">Chickpeas (5100):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyChickpeas5100"
-         name="cmdtyChickpeas5100"
-         [(ngModel)]="cmdtyChickpeas5100"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyExLongStapleCotton6000">Ex Long Staple Cotton (6000):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyExLongStapleCotton6000"
-         name="cmdtyExLongStapleCotton6000"
-         [(ngModel)]="cmdtyExLongStapleCotton6000"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyUplandCotton6100">Upland Cotton (6100):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyUplandCotton6100"
-         name="cmdtyUplandCotton6100"
-         [(ngModel)]="cmdtyUplandCotton6100"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyUplandSeedCotton6300">Upland Seed Cotton (6300):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyUplandSeedCotton6300"
-         name="cmdtyUplandSeedCotton6300"
-         [(ngModel)]="cmdtyUplandSeedCotton6300"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyExLongStapleSeedCotton6600">Ex Long Staple Seed Cotton (6600):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyExLongStapleSeedCotton6600"
-         name="cmdtyExLongStapleSeedCotton6600"
-         [(ngModel)]="cmdtyExLongStapleSeedCotton6600"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtySesameSeeds6900">Sesame Seeds (6900):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtySesameSeeds6900"
-         name="cmdtySesameSeeds6900"
-         [(ngModel)]="cmdtySesameSeeds6900"
-         type="checkbox">
-</div>
-```
-
-  </div>
-
-  <!-- Column 3: Seeds & Oils -->
-
-  <div class="commodity-column">
-    <div class="fsa-field">
-      <label class="fsa-field__label" for="cmdtySunflowerSeeds7100">Sunflower Seeds (7100):</label>
-      <input class="fsa-input fsa-field__item"
-             id="cmdtySunflowerSeeds7100"
-             name="cmdtySunflowerSeeds7100"
-             [(ngModel)]="cmdtySunflowerSeeds7100"
-             type="checkbox">
-    </div>
-
-```
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyCanolaSeed7200">Canola Seed (7200):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyCanolaSeed7200"
-         name="cmdtyCanolaSeed7200"
-         [(ngModel)]="cmdtyCanolaSeed7200"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyRapeseed7300">Rapeseed (7300):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyRapeseed7300"
-         name="cmdtyRapeseed7300"
-         [(ngModel)]="cmdtyRapeseed7300"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtySafflowerSeed7400">Safflower Seed (7400):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtySafflowerSeed7400"
-         name="cmdtySafflowerSeed7400"
-         [(ngModel)]="cmdtySafflowerSeed7400"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyMustardSeed7600">Mustard Seed (7600):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyMustardSeed7600"
-         name="cmdtyMustardSeed7600"
-         [(ngModel)]="cmdtyMustardSeed7600"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyCottonseed7700">Cottonseed (7700):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyCottonseed7700"
-         name="cmdtyCottonseed7700"
-         [(ngModel)]="cmdtyCottonseed7700"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtySunflowerSeedNonOil7800">Sunflower Seed Non-Oil (7800):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtySunflowerSeedNonOil7800"
-         name="cmdtySunflowerSeedNonOil7800"
-         [(ngModel)]="cmdtySunflowerSeedNonOil7800"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyCrambleOilSeed8000">Cramble Oil Seed (8000):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyCrambleOilSeed8000"
-         name="cmdtyCrambleOilSeed8000"
-         [(ngModel)]="cmdtyCrambleOilSeed8000"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyHoney8204">Honey (8204):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyHoney8204"
-         name="cmdtyHoney8204"
-         [(ngModel)]="cmdtyHoney8204"
-         type="checkbox">
-</div>
-```
-
-  </div>
-
-  <!-- Column 4: Sugar & Rice -->
-
-  <div class="commodity-column">
-    <div class="fsa-field">
-      <label class="fsa-field__label" for="cmdtyRawCaneSugar8301">Raw Cane Sugar (8301):</label>
-      <input class="fsa-input fsa-field__item"
-             id="cmdtyRawCaneSugar8301"
-             name="cmdtyRawCaneSugar8301"
-             [(ngModel)]="cmdtyRawCaneSugar8301"
-             type="checkbox">
-    </div>
-
-```
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyInProcessCaneSugar8305">In Process Cane Sugar (8305):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyInProcessCaneSugar8305"
-         name="cmdtyInProcessCaneSugar8305"
-         [(ngModel)]="cmdtyInProcessCaneSugar8305"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyInProcessBeetSugar8306">In Process Beet Sugar (8306):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyInProcessBeetSugar8306"
-         name="cmdtyInProcessBeetSugar8306"
-         [(ngModel)]="cmdtyInProcessBeetSugar8306"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyRefinedCaneSugar8311">Refined Cane Sugar (8311):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyRefinedCaneSugar8311"
-         name="cmdtyRefinedCaneSugar8311"
-         [(ngModel)]="cmdtyRefinedCaneSugar8311"
-         type="checkbox">
-</div>
-
-<div class="fsa-field">
-  <label class="fsa-field__label" for="cmdtyRoughRice9500">Rough Rice (9500):</label>
-  <input class="fsa-input fsa-field__item"
-         id="cmdtyRoughRice9500"
-         name="cmdtyRoughRice9500"
-         [(ngModel)]="cmdtyRoughRice9500"
-         type="checkbox">
-</div>
-
-<div class="fsa-field fsa-field--select">
-  <label class="fsa-field__label" for="cmdtyOther">Other:</label>
-  <select class="fsa-select fsa-field__item"
-          id="cmdtyOther"
-          name="cmdtyOther"
-          [(ngModel)]="cmdtyOther"
-          [disabled]="isLoadingOtherCommodities">
-    <option value="">-- Select --</option>
-    <option *ngFor="let commodity of otherCommodities" 
-            [value]="commodity.id">
-      {{ commodity.name }} ({{ commodity.code }})
-    </option>
-  </select>
-</div>
-
-<div class="search-actions">
-  <button (click)="onSaveDraft()" class="fsa-btn fsa-btn--primary">Save Draft</button>
-  <button (click)="onSubmit()" class="fsa-btn fsa-btn--secondary">Submit</button>
-  <button (click)="selectAll()" class="fsa-btn fsa-btn--secondary">Select All</button>
-  <button (click)="reset()" class="fsa-btn fsa-btn--secondary">Cancel</button>
-</div>
-```
-
-  </div>
-</div>
-
-
-
-
-
-
-
-
-
-
-/* commodity.component.css */
-
-.page-title {
-font-size: 24px;
-font-weight: 600;
-margin-bottom: 20px;
-color: #333;
-}
-
-.search-error {
-background-color: #fff4e5;
-border: 1px solid #ffb300;
-border-radius: 4px;
-padding: 12px 16px;
-margin-bottom: 20px;
-display: flex;
-align-items: center;
-gap: 8px;
-color: #856404;
-}
-
-.error-icon {
-font-size: 18px;
-}
-
-.commodity-grid {
-display: grid;
-grid-template-columns: repeat(4, 1fr);
-gap: 20px;
-padding: 20px;
-background-color: #f8f9fa;
-border-radius: 4px;
-}
-
-.commodity-column {
-display: flex;
-flex-direction: column;
-gap: 12px;
-}
-
-.fsa-field {
-display: flex;
-align-items: center;
-gap: 8px;
-background-color: white;
-padding: 8px 12px;
-border-radius: 4px;
-border: 1px solid #e0e0e0;
-}
-
-.fsa-field__label {
-flex: 1;
-font-size: 14px;
-color: #333;
-margin: 0;
-cursor: pointer;
-}
-
-.fsa-input.fsa-field__item[type=“checkbox”] {
-width: 18px;
-height: 18px;
-cursor: pointer;
-flex-shrink: 0;
-}
-
-.fsa-input.fsa-field__item[type=“text”] {
-flex: 1;
-padding: 6px 8px;
-border: 1px solid #ccc;
-border-radius: 4px;
-font-size: 14px;
-}
-
-.fsa-input.fsa-field__item[type=“text”]:focus {
-outline: none;
-border-color: #0066cc;
-box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
-}
-
-.fsa-field–select {
-display: flex;
-align-items: center;
-gap: 8px;
-}
-
-.fsa-select.fsa-field__item {
-flex: 1;
-padding: 6px 8px;
-border: 1px solid #ccc;
-border-radius: 4px;
-font-size: 14px;
-background-color: white;
-cursor: pointer;
-min-width: 0;
-}
-
-.fsa-select.fsa-field__item:focus {
-outline: none;
-border-color: #0066cc;
-box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
-}
-
-.fsa-select.fsa-field__item:disabled {
-background-color: #f5f5f5;
-cursor: not-allowed;
-opacity: 0.6;
-}
-
-.search-actions {
-display: flex;
-flex-direction: column;
-gap: 10px;
-margin-top: 20px;
-}
-
-.fsa-btn {
-padding: 10px 16px;
-font-size: 14px;
-font-weight: 500;
-border-radius: 4px;
-border: none;
-cursor: pointer;
-transition: all 0.2s;
-width: 100%;
-}
-
-.fsa-btn–primary {
-background-color: #0066cc;
-color: white;
-}
-
-.fsa-btn–primary:hover {
-background-color: #0052a3;
-}
-
-.fsa-btn–primary:active {
-background-color: #003d7a;
-}
-
-.fsa-btn–secondary {
-background-color: #6c757d;
-color: white;
-}
-
-.fsa-btn–secondary:hover {
-background-color: #5a6268;
-}
-
-.fsa-btn–secondary:active {
-background-color: #545b62;
-}
-
-.fsa-btn:disabled {
-opacity: 0.5;
-cursor: not-allowed;
-}
-
-@media (max-width: 1200px) {
-.commodity-grid {
-grid-template-columns: repeat(2, 1fr);
-}
-}
-
-@media (max-width: 768px) {
-.commodity-grid {
-grid-template-columns: 1fr;
-}
-}
-
-
-
-
-
-

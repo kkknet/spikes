@@ -1,0 +1,101 @@
+<div class="accounting-program-years-container">
+  <h2 class="page-title">Accounting Program Years</h2>
+
+  <!-- Success Message Alert -->
+
+  <div class="fsa-alert fsa-alert--success" role="alert" *ngIf="saveSubmitResultMessage">
+    <div class="fsa-alert__body">
+      <p class="fsa-alert__text" aria-hidden="true">
+        {{ saveSubmitResultMessage }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Error Message Alert -->
+
+  <div class="search-error" role="alert" aria-live="assertive" *ngIf="errorMessage">
+    <span class="error-icon" aria-hidden="true">▲</span>
+    {{ errorMessage }}
+  </div>
+
+  <!-- Years Selection Grid -->
+
+  <div class="fsa-grid">
+    <div class="years-grid-header">
+      <div class="header-cell">Select</div>
+      <div class="header-cell">Year</div>
+      <div class="header-cell">Status</div>
+    </div>
+
+```
+<div class="year-row" *ngFor="let year of programYears">
+  <div class="checkbox-cell">
+    <input 
+      type="checkbox" 
+      class="fsa-checkbox fsa-checkbox--solo"
+      [id]="'year' + year.year"
+      [name]="'year' + year.year"
+      [(ngModel)]="year.selected"
+      [attr.aria-describedby]="'year' + year.year"
+    />
+  </div>
+  <div class="year-cell">
+    <label [for]="'year' + year.year">{{ year.year }}</label>
+  </div>
+  <div class="status-cell">
+    <select 
+      class="fsa-select status-dropdown"
+      [(ngModel)]="year.status"
+      [id]="'status' + year.year"
+      [name]="'status' + year.year"
+    >
+      <option value="Inactive">Inactive</option>
+      <option value="Active">Active</option>
+    </select>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- Action Buttons -->
+
+  <div class="action-buttons">
+    <button 
+      type="button"
+      class="fsa-btn fsa-btn--secondary"
+      (click)="selectAllYears()"
+    >
+      Select All
+    </button>
+    <button 
+      type="button"
+      class="fsa-btn fsa-btn--secondary"
+      (click)="deselectAllYears()"
+    >
+      Deselect All
+    </button>
+    <button 
+      type="button"
+      class="fsa-btn fsa-btn--secondary"
+      (click)="onSaveDraft()"
+      [disabled]="!isAnyYearSelected()"
+    >
+      Save Draft
+    </button>
+    <button 
+      type="button"
+      class="fsa-btn fsa-btn--primary"
+      (click)="onSubmit()"
+      [disabled]="!isAnyYearSelected()"
+    >
+      Submit
+    </button>
+  </div>
+
+  <!-- Selection Summary -->
+
+  <div class="selection-summary">
+    <p>{{ getSelectedCount() }} of {{ programYears.length }} years selected</p>
+  </div>
+</div>

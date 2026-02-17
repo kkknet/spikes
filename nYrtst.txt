@@ -1,0 +1,402 @@
+import { ComponentFixture, TestBed } from ‘@angular/core/testing’;
+import { AccountingProgramYearsComponent } from ‘./accounting-program-years.component’;
+import { of, throwError } from ‘rxjs’;
+import { ApiService } from ‘../../../services/api.service’;
+import { HttpErrorResponse } from ‘@angular/common/http’;
+
+describe(‘AccountingProgramYearsComponent’, () => {
+let component: AccountingProgramYearsComponent;
+let fixture: ComponentFixture<AccountingProgramYearsComponent>;
+let apiServiceSpy: jasmine.SpyObj<ApiService>;
+
+beforeEach(async () => {
+apiServiceSpy = jasmine.createSpy(‘ApiService’, {
+get: jasmine.createSpy(‘get’).and.returnValue(of({})),
+post: jasmine.createSpy(‘post’).and.returnValue(of({})),
+}) as unknown as jasmine.SpyObj<ApiService>;
+
+```
+await TestBed.configureTestingModule({
+  imports: [AccountingProgramYearsComponent],
+  providers: [{ provide: ApiService, useValue: apiServiceSpy }]
+}).compileComponents();
+
+fixture = TestBed.createComponent(AccountingProgramYearsComponent);
+component = fixture.componentInstance;
+```
+
+});
+
+it(‘should create’, () => {
+expect(component).toBeTruthy();
+});
+
+describe(‘ngOnInit’, () => {
+it(‘should call initializeYears on initialization’, () => {
+spyOn(component, ‘initializeYears’);
+component.ngOnInit();
+expect(component.initializeYears).toHaveBeenCalled();
+});
+});
+
+describe(‘initializeYears’, () => {
+it(‘should generate 10 years starting from current year’, () => {
+const currentYear = new Date().getFullYear();
+
+```
+  component.initializeYears();
+
+  expect(component.programYears.length).toBe(10);
+  expect(component.programYears[0].year).toBe(currentYear);
+  expect(component.programYears[9].year).toBe(currentYear + 9);
+});
+
+it('should initialize all years with Inactive status and unselected', () => {
+  component.initializeYears();
+
+  component.programYears.forEach(year => {
+    expect(year.status).toBe('Inactive');
+    expect(year.selected).toBe(false);
+  });
+});
+
+it('should generate consecutive years', () => {
+  component.initializeYears();
+
+  for (let i = 1; i < component.programYears.length; i++) {
+    expect(component.programYears[i].year).toBe(component.programYears[i - 1].year + 1);
+  }
+});
+
+it('should clear and regenerate years on multiple calls', () => {
+  component.initializeYears();
+  const firstCall = [...component.programYears];
+  
+  component.initializeYears();
+  const secondCall = [...component.programYears];
+
+  expect(firstCall.length).toBe(secondCall.length);
+  expect(firstCall[0].year).toBe(secondCall[0].year);
+});
+```
+
+});
+
+describe(‘captureSelectedYears’, () => {
+it(‘should return only selected years’, () => {
+component.programYears = [
+{ year: 2026, status: ‘Inactive’, selected: true },
+{ year: 2027, status: ‘Inactive’, selected: false },
+{ year: 2028, status: ‘Active’, selected: true }
+];
+
+```
+  const selected = component.captureSelectedYears();
+
+  expect(selected.length).toBe(2);
+  expect(selected[0].year).toBe(2026);
+  expect(selected[1].year).toBe(2028);
+});
+
+it('should return empty array when no years are selected', () => {
+  component.programYears = [
+    { year: 2026, status: 'Inactive', selected: false },
+    { year: 2027, status: 'Inactive', selected: false }
+  ];
+
+  const selected = component.captureSelectedYears();
+
+  expect(selected.length).toBe(0);
+});
+```
+
+});
+
+describe(‘onSaveDraft’, () => {
+beforeEach(() => {
+component.programYears = [
+{ year: 2026, status: ‘Active’, selected: true },
+{ year: 2027, status: ‘Inactive’, selected: false }
+];
+});
+
+```
+it('should save draft successfully', () => {
+  apiServiceSpy.post.and.returnValue(of('Draft saved successfully'));
+  
+  component.onSaveDraft();
+
+  expect(apiServiceSpy.post).toHaveBeenCalledWith(
+    'pfrsuiapi/AccountingProgramYears/saveDraft',
+    jasmine.objectContaining({
+      status: 'DRAFT',
+      programYears: jasmine.any(Array)
+    }),
+    { responseType: 'text' }
+  );
+  expect(component.saveSubmitResultMessage).toBe('Draft saved successfully');
+});
+
+it('should show error when no years are selected', () => {
+  component.programYears = [
+    { year: 2026, status: 'Inactive', selected: false }
+  ];
+
+  component.onSaveDraft();
+
+  expect(component.errorMessage).toBe('Please select at least one year');
+  expect(apiServiceSpy.post).not.toHaveBeenCalled();
+});
+
+it('should clear error message before saving', () => {
+  component.errorMessage = 'Previous error';
+  apiServiceSpy.post.and.returnValue(of('Success'));
+
+  component.onSaveDraft();
+
+  expect(component.errorMessage).toBe('');
+});
+
+it('should handle save draft API error', () => {
+  const errorResponse = new HttpErrorResponse({
+    error: 'Save failed',
+    status: 500,
+    statusText: 'Internal Server Error'
+  });
+
+  apiServiceSpy.post.and.returnValue(throwError(() => errorResponse));
+
+  component.onSaveDraft();
+
+  expect(component.errorMessage).toBe('Error saving accounting program years draft');
+});
+
+it('should clear success message after 5 seconds', (done) => {
+  jasmine.clock().install();
+  apiServiceSpy.post.and.returnValue(of('Success'));
+
+  component.onSaveDraft();
+
+  expect(component.saveSubmitResultMessage).toBe('Draft saved successfully');
+
+  jasmine.clock().tick(5001);
+
+  expect(component.saveSubmitResultMessage).toBe('');
+  jasmine.clock().uninstall();
+  done();
+});
+```
+
+});
+
+describe(‘onSubmit’, () => {
+beforeEach(() => {
+component.programYears = [
+{ year: 2026, status: ‘Active’, selected: true },
+{ year: 2027, status: ‘Active’, selected: true }
+];
+});
+
+```
+it('should submit successfully', () => {
+  apiServiceSpy.post.and.returnValue(of('Submitted successfully'));
+
+  component.onSubmit();
+
+  expect(apiServiceSpy.post).toHaveBeenCalledWith(
+    'pfrsuiapi/AccountingProgramYears/submit',
+    jasmine.objectContaining({
+      status: 'SUBMITTED',
+      programYears: jasmine.any(Array)
+    }),
+    { responseType: 'text' }
+  );
+  expect(component.saveSubmitResultMessage).toBe('Years submitted successfully');
+});
+
+it('should show error when no years are selected', () => {
+  component.programYears = [
+    { year: 2026, status: 'Inactive', selected: false }
+  ];
+
+  component.onSubmit();
+
+  expect(component.errorMessage).toBe('Please select at least one year');
+  expect(apiServiceSpy.post).not.toHaveBeenCalled();
+});
+
+it('should handle submit API error', () => {
+  const errorResponse = new HttpErrorResponse({
+    error: 'Submit failed',
+    status: 500,
+    statusText: 'Internal Server Error'
+  });
+
+  apiServiceSpy.post.and.returnValue(throwError(() => errorResponse));
+
+  component.onSubmit();
+
+  expect(component.errorMessage).toBe('Error submitting accounting program years');
+});
+```
+
+});
+
+describe(‘toggleYearSelection’, () => {
+it(‘should toggle year selection from false to true’, () => {
+const year = { year: 2026, status: ‘Inactive’ as const, selected: false };
+
+```
+  component.toggleYearSelection(year);
+
+  expect(year.selected).toBe(true);
+});
+
+it('should toggle year selection from true to false', () => {
+  const year = { year: 2026, status: 'Inactive' as const, selected: true };
+  
+  component.toggleYearSelection(year);
+
+  expect(year.selected).toBe(false);
+});
+```
+
+});
+
+describe(‘selectAllYears’, () => {
+it(‘should select all years’, () => {
+component.programYears = [
+{ year: 2026, status: ‘Inactive’, selected: false },
+{ year: 2027, status: ‘Inactive’, selected: false },
+{ year: 2028, status: ‘Active’, selected: true }
+];
+
+```
+  component.selectAllYears();
+
+  expect(component.programYears.every(y => y.selected)).toBe(true);
+});
+
+it('should work with empty array', () => {
+  component.programYears = [];
+
+  component.selectAllYears();
+
+  expect(component.programYears.length).toBe(0);
+});
+```
+
+});
+
+describe(‘deselectAllYears’, () => {
+it(‘should deselect all years’, () => {
+component.programYears = [
+{ year: 2026, status: ‘Inactive’, selected: true },
+{ year: 2027, status: ‘Inactive’, selected: true },
+{ year: 2028, status: ‘Active’, selected: false }
+];
+
+```
+  component.deselectAllYears();
+
+  expect(component.programYears.every(y => !y.selected)).toBe(true);
+});
+```
+
+});
+
+describe(‘getSelectedCount’, () => {
+it(‘should return correct count of selected years’, () => {
+component.programYears = [
+{ year: 2026, status: ‘Inactive’, selected: true },
+{ year: 2027, status: ‘Inactive’, selected: false },
+{ year: 2028, status: ‘Active’, selected: true },
+{ year: 2029, status: ‘Inactive’, selected: true }
+];
+
+```
+  expect(component.getSelectedCount()).toBe(3);
+});
+
+it('should return 0 when no years are selected', () => {
+  component.programYears = [
+    { year: 2026, status: 'Inactive', selected: false },
+    { year: 2027, status: 'Inactive', selected: false }
+  ];
+
+  expect(component.getSelectedCount()).toBe(0);
+});
+
+it('should return 0 for empty array', () => {
+  component.programYears = [];
+
+  expect(component.getSelectedCount()).toBe(0);
+});
+```
+
+});
+
+describe(‘isAnyYearSelected’, () => {
+it(‘should return true when at least one year is selected’, () => {
+component.programYears = [
+{ year: 2026, status: ‘Inactive’, selected: false },
+{ year: 2027, status: ‘Inactive’, selected: true },
+{ year: 2028, status: ‘Active’, selected: false }
+];
+
+```
+  expect(component.isAnyYearSelected()).toBe(true);
+});
+
+it('should return false when no years are selected', () => {
+  component.programYears = [
+    { year: 2026, status: 'Inactive', selected: false },
+    { year: 2027, status: 'Inactive', selected: false }
+  ];
+
+  expect(component.isAnyYearSelected()).toBe(false);
+});
+
+it('should return false for empty array', () => {
+  component.programYears = [];
+
+  expect(component.isAnyYearSelected()).toBe(false);
+});
+```
+
+});
+
+describe(‘Component Integration’, () => {
+it(‘should initialize with empty program years’, () => {
+expect(component.programYears).toEqual([]);
+expect(component.errorMessage).toBe(’’);
+expect(component.saveSubmitResultMessage).toBe(’’);
+expect(component.isLoadingYears).toBe(false);
+});
+
+```
+it('should handle full workflow: initialize, select, save draft', () => {
+  apiServiceSpy.post.and.returnValue(of('Success'));
+
+  component.ngOnInit();
+  expect(component.programYears.length).toBe(10);
+
+  component.programYears[0].selected = true;
+  component.onSaveDraft();
+
+  expect(component.saveSubmitResultMessage).toBe('Draft saved successfully');
+});
+
+it('should generate years dynamically on initialization', () => {
+  const currentYear = new Date().getFullYear();
+  
+  component.ngOnInit();
+
+  expect(component.programYears.length).toBe(10);
+  expect(component.programYears[0].year).toBe(currentYear);
+  expect(component.programYears[9].year).toBe(currentYear + 9);
+});
+```
+
+});
+});

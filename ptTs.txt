@@ -1,0 +1,197 @@
+import { Component, OnInit, AfterViewInit, signal } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { forkJoin, of, Observable } from 'rxjs';
+import { finalize } from 'rxjs/operators';
+
+export interface BfmField {
+  key: string;
+  label: string;
+  type: 'input' | 'dropdown' | 'checkbox' | 'readonly';
+  lookupCode?: string;
+  options?: LookupOption[];
+  required?: boolean;
+  maxLength?: number;
+  readonly?: boolean;
+}
+
+export interface LookupOption {
+  value: string;
+  label: string;
+}
+
+export interface PaymentTxnRow {
+  selected: boolean;
+  txnCode: string;
+  autoInd: string;
+  balAction: string;
+  ctlTot: string;
+  betc: string;
+  revBetc: string;
+  subAcct: string;
+}
+
+@Component({
+  selector: 'app-payment-txns',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  templateUrl: './payment-txns.component.html',
+  styleUrls: ['./payment-txns.component.scss'],
+})
+export class PaymentTxnsComponent implements OnInit, AfterViewInit {
+  form!: FormGroup;
+  isLoading = signal(true);
+  rows: BfmField[][] = [];
+
+  autoIndOptions: LookupOption[]   = [];
+  balActionOptions: LookupOption[] = [];
+  ctlTotOptions: LookupOption[]    = [];
+  betcOptions: LookupOption[]      = [];
+  revBetcOptions: LookupOption[]   = [];
+  subAcctOptions: LookupOption[]   = [];
+
+  txnRows: PaymentTxnRow[] = [
+    { selected: true,  txnCode: '105', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGF',   revBetc: 'DISGFAJ', subAcct: '000' },
+    { selected: true,  txnCode: '107', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: true,  txnCode: '109', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGF',   revBetc: 'DISGFAJ', subAcct: '000' },
+    { selected: true,  txnCode: '115', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: true,  txnCode: '117', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: false, txnCode: '118', autoInd: '', balAction: '', ctlTot: '', betc: '',         revBetc: '',        subAcct: '000' },
+    { selected: true,  txnCode: '171', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: true,  txnCode: '172', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: false, txnCode: '173', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: false, txnCode: '174', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+  ];
+
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
+    this.initializeData();
+  }
+
+  ngAfterViewInit(): void {}
+
+  // ---------------------------------------------------------------------------
+  // Replace this method body with real service calls, e.g.:
+  //   return this.lookupService.fetch(code);
+  // ---------------------------------------------------------------------------
+  private fetchLookup(code: string): Observable<LookupOption[]> {
+    const mockData: Record<string, LookupOption[]> = {
+      AUTO_IND:   [{ value: 'Y', label: 'Y' }, { value: 'N', label: 'N' }],
+      BAL_ACTION: [{ value: 'D', label: 'D' }, { value: 'C', label: 'C' }],
+      CTL_TOT:    [{ value: 'Y', label: 'Y' }, { value: 'N', label: 'N' }],
+      BETC:       [{ value: 'DISGF', label: 'DISGF' }, { value: 'DISGFAJ', label: 'DISGFAJ' }],
+      REV_BETC:   [{ value: 'DISGF', label: 'DISGF' }, { value: 'DISGFAJ', label: 'DISGFAJ' }],
+      SUB_ACCT:   [{ value: '000', label: '000' }, { value: '001', label: '001' }],
+    };
+    return of(mockData[code] ?? []);
+  }
+
+  private initializeData(): void {
+    // PR Fix: Use forkJoin to handle everything in one stream
+    forkJoin({
+      autoInd:   this.fetchLookup('AUTO_IND'),
+      balAction: this.fetchLookup('BAL_ACTION'),
+      ctlTot:    this.fetchLookup('CTL_TOT'),
+      betc:      this.fetchLookup('BETC'),
+      revBetc:   this.fetchLookup('REV_BETC'),
+      subAcct:   this.fetchLookup('SUB_ACCT'),
+    })
+      .pipe(
+        finalize(() => {
+          this.isLoading.set(false);
+          this.buildForm();
+          this.buildRows();
+        })
+      )
+      .subscribe({
+        next: (results) => {
+          this.autoIndOptions   = results.autoInd;
+          this.balActionOptions = results.balAction;
+          this.ctlTotOptions    = results.ctlTot;
+          this.betcOptions      = results.betc;
+          this.revBetcOptions   = results.revBetc;
+          this.subAcctOptions   = results.subAcct;
+        },
+        error: (err) => console.error('Data initialization failed', err),
+      });
+  }
+
+  private buildForm(): void {
+    const group: Record<string, unknown> = {};
+
+    this.txnRows.forEach((row, i) => {
+      group[`selected_${i}`]  = [row.selected];
+      group[`autoInd_${i}`]   = [row.autoInd];
+      group[`balAction_${i}`] = [row.balAction];
+      group[`ctlTot_${i}`]    = [row.ctlTot];
+      group[`betc_${i}`]      = [row.betc,    row.selected ? [Validators.required] : []];
+      group[`revBetc_${i}`]   = [row.revBetc, row.selected ? [Validators.required] : []];
+      group[`subAcct_${i}`]   = [row.subAcct, [Validators.required]];
+    });
+
+    this.form = this.fb.group(group);
+  }
+
+  private buildRows(): void {
+    this.rows = [
+      [
+        { key: 'txnCodeFilter', label: 'Txn Code:', type: 'input',    maxLength: 10 },
+        { key: 'betcFilter',    label: 'BETC:',     type: 'dropdown', lookupCode: 'BETC' },
+      ],
+    ];
+  }
+
+  isFieldRequired(field: BfmField): boolean {
+    return field.required === true;
+  }
+
+  isReadonly(field: BfmField): boolean {
+    return field.readonly === true;
+  }
+
+  onSelectChange(index: number): void {
+    const selected    = this.form.get(`selected_${index}`)?.value as boolean;
+    const betcCtrl    = this.form.get(`betc_${index}`);
+    const revBetcCtrl = this.form.get(`revBetc_${index}`);
+
+    if (selected) {
+      betcCtrl?.setValidators([Validators.required]);
+      revBetcCtrl?.setValidators([Validators.required]);
+    } else {
+      betcCtrl?.clearValidators();
+      revBetcCtrl?.clearValidators();
+    }
+
+    betcCtrl?.updateValueAndValidity();
+    revBetcCtrl?.updateValueAndValidity();
+  }
+
+  onSubmit(): void {
+    if (this.form.valid) {
+      const payload = this.txnRows.map((row, i) => ({
+        txnCode:   row.txnCode,
+        selected:  this.form.get(`selected_${i}`)?.value as boolean,
+        autoInd:   this.form.get(`autoInd_${i}`)?.value as string,
+        balAction: this.form.get(`balAction_${i}`)?.value as string,
+        ctlTot:    this.form.get(`ctlTot_${i}`)?.value as string,
+        betc:      this.form.get(`betc_${i}`)?.value as string,
+        revBetc:   this.form.get(`revBetc_${i}`)?.value as string,
+        subAcct:   this.form.get(`subAcct_${i}`)?.value as string,
+      }));
+      console.log('Payment Txns payload:', payload);
+      // Replace with: this.paymentTxnService.save(payload).subscribe(...)
+    } else {
+      this.form.markAllAsTouched();
+    }
+  }
+
+  onCancel(): void {
+    this.buildForm();
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+}

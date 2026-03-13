@@ -1,32 +1,27 @@
-import { Component, OnInit, AfterViewInit, signal, inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import {
+  Component,
+  OnInit,
+  inject,
+  AfterViewInit,
+  ElementRef,
+  ViewChild,
+  signal,
+  Input,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { forkJoin, Observable } from 'rxjs';
-import { finalize } from 'rxjs/operators';
-import { ApiService } from '../../../../../shared/services/api.service'; // update path as needed
-
-export interface BfmField {
-  key: string;
-  label: string;
-  type: 'input' | 'dropdown' | 'checkbox' | 'label';
-  lookupCode?: string;
-  options?: string[];
-  required?: boolean;
-  maxLength?: number;
-  readonly?: boolean;
-  txnCode?: string;
-}
-
-export interface PaymentTxnRow {
-  selected: boolean;
-  txnCode: string;
-  autoInd: string;
-  balAction: string;
-  ctlTot: string;
-  betc: string;
-  revBetc: string;
-  subAcct: string;
-}
+import { ApiService } from '../../../../../../core/services/api.service';
+import { HttpParams } from '@angular/common/http';
+import {
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { BfmField } from '../../../../../../shared/models/fetch-page-options.model';
+import { FormFieldUtilService } from '../../../../../../shared/utils/form-field-util';
+import { forkJoin, finalize, Observable, tap, catchError, of } from 'rxjs';
+import { CustomValidators } from '../../../../../../shared/utils/validators/custom-validators';
+import { StepWizardComponent } from '../../../../../../shared/components/step-wizard/step-wizard.component';
 
 @Component({
   selector: 'app-payment-transactions',
@@ -36,94 +31,144 @@ export interface PaymentTxnRow {
   styleUrl: './payment-transactions.component.scss',
 })
 export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
+  @ViewChild('modalContainer') modalContainer!: ElementRef<HTMLElement>;
 
   private apiService = inject(ApiService);
   private fb         = inject(FormBuilder);
+  scoapMaxLength     = 14;
 
-  form: FormGroup       = this.fb.group({});
-  isLoading             = signal(true);
-  rows: BfmField[][]    = [];
-  lookupOptions         = signal<Record<string, string[]>>({});
+  agencyCodes: string[]      = [];
+  programCatCodes: string[]  = [];
+  collectionTypes: string[]  = [];
 
-  readonly txnRows: PaymentTxnRow[] = [
-    { selected: true,  txnCode: '105', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGF',   revBetc: 'DISGFAJ', subAcct: '000' },
-    { selected: true,  txnCode: '107', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
-    { selected: true,  txnCode: '109', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGF',   revBetc: 'DISGFAJ', subAcct: '000' },
-    { selected: true,  txnCode: '115', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
-    { selected: true,  txnCode: '117', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
-    { selected: false, txnCode: '118', autoInd: '', balAction: '', ctlTot: '', betc: '',         revBetc: '',        subAcct: '000' },
-    { selected: true,  txnCode: '171', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
-    { selected: true,  txnCode: '172', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
-    { selected: false, txnCode: '173', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
-    { selected: false, txnCode: '174', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+  lookupOptions = signal<Record<string, string[]>>({});
+
+  readonly yesNoOptions      = ['Y', 'N'];
+  readonly availTypeOptions  = ['X', 'F', ' '];
+
+  // 9 years from now
+  readonly yearOptions = Array.from({ length: 10 }, (_, i) =>
+    (new Date().getFullYear() + i).toString()
+  );
+
+  rows: BfmField[][] = [];
+
+  @Input() stepWizard!: StepWizardComponent;
+  form: FormGroup  = this.fb.group({});
+  isLoading        = signal(true);
+
+  // Txn row definitions — single source of truth
+  private readonly txnCodes = [
+    '105', '107', '109', '115', '117',
+    '118', '171', '172', '173', '174',
   ];
 
-  ngOnInit(): void {
+  private readonly defaultBetc: Record<string, string> = {
+    '105': 'DISGF',   '107': 'DISGFAJ', '109': 'DISGF',
+    '115': 'DISGFAJ', '117': 'DISGFAJ', '118': '',
+    '171': 'DISGFAJ', '172': 'DISGFAJ', '173': 'DISGFAJ', '174': 'DISGFAJ',
+  };
+
+  private readonly defaultRevBetc: Record<string, string> = {
+    '105': 'DISGFAJ', '107': 'DISGF',   '109': 'DISGFAJ',
+    '115': 'DISGF',   '117': 'DISGF',   '118': '',
+    '171': 'DISGF',   '172': 'DISGF',   '173': 'DISGF',   '174': 'DISGF',
+  };
+
+  private readonly selectedByDefault = [
+    '105', '107', '109', '115', '117', '171', '172',
+  ];
+
+  ngOnInit() {
     this.initializeData();
   }
 
-  ngAfterViewInit(): void {}
+  ngAfterViewInit() {}
 
-  // ─── Replace these with your real apiService calls ──────────────────────────
-  private fetchLookup(code: string): Observable<string[]> {
-    const mock: Record<string, string[]> = {
-      AUTO_IND:   ['Y', 'N'],
-      BAL_ACTION: ['D', 'C'],
-      CTL_TOT:    ['Y', 'N'],
-      BETC:       ['DISGF', 'DISGFAJ'],
-      REV_BETC:   ['DISGF', 'DISGFAJ'],
-      SUB_ACCT:   ['000', '001'],
-    };
-    const { of } = require('rxjs');
-    return of(mock[code] ?? []);
-  }
-  // ────────────────────────────────────────────────────────────────────────────
+  private initializeData() {
+    const lookupCodes = [
+      'ACA', 'MAC', 'FAL', 'FCL', 'FPL',
+      'IRC', 'CTU', 'TOF', 'SAC', 'ALC', 'DPC',
+      'AUTO_IND', 'BAL_ACTION', 'CTL_TOT', 'BETC', 'REV_BETC', 'SUB_ACCT',
+    ];
 
-  private initializeData(): void {
+    const lookupObservables = lookupCodes.map((code) => this.fetchLookup(code));
+
     // PR Fix: Use forkJoin to handle everything in one stream
     forkJoin({
-      AUTO_IND:   this.fetchLookup('AUTO_IND'),
-      BAL_ACTION: this.fetchLookup('BAL_ACTION'),
-      CTL_TOT:    this.fetchLookup('CTL_TOT'),
-      BETC:       this.fetchLookup('BETC'),
-      REV_BETC:   this.fetchLookup('REV_BETC'),
-      SUB_ACCT:   this.fetchLookup('SUB_ACCT'),
+      lookups:           forkJoin(lookupObservables),
+      agencyCodes:       this.fetchAgencyCodes(),
+      programCategories: this.fetchProgramCategories(),
+      collectionTypes:   this.fetchCollectionTypes(),
     })
       .pipe(
         finalize(() => {
-          this.buildForm();   // ← MUST be before isLoading.set(false)
-          this.buildRows();
+          this.buildForm();        // MUST be before isLoading.set(false)
           this.isLoading.set(false);
         })
       )
       .subscribe({
         next: (results) => {
-          this.lookupOptions.set(results as Record<string, string[]>);
+          // Map lookup results back by code
+          const mapped: Record<string, string[]> = {};
+          lookupCodes.forEach((code, i) => {
+            mapped[code] = results.lookups[i] ?? [];
+          });
+          this.lookupOptions.set(mapped);
+          this.agencyCodes     = results.agencyCodes   ?? [];
+          this.programCatCodes = results.programCategories ?? [];
+          this.collectionTypes = results.collectionTypes   ?? [];
         },
         error: (err) => console.error('Data initialization failed', err),
       });
   }
 
-  private buildForm(): void {
+  // ── Replace these with real apiService calls ────────────────────────────────
+  private fetchLookup(code: string): Observable<string[]> {
+    return this.apiService.getLookup(code).pipe(
+      catchError(() => of([]))
+    );
+  }
+
+  private fetchAgencyCodes(): Observable<string[]> {
+    return this.apiService.getAgencyCodes().pipe(catchError(() => of([])));
+  }
+
+  private fetchProgramCategories(): Observable<string[]> {
+    return this.apiService.getProgramCategories().pipe(catchError(() => of([])));
+  }
+
+  private fetchCollectionTypes(): Observable<string[]> {
+    return this.apiService.getCollectionTypes().pipe(catchError(() => of([])));
+  }
+  // ────────────────────────────────────────────────────────────────────────────
+
+  private buildForm() {
     const group: Record<string, unknown> = {};
 
-    // Keys follow pattern: select_0, autoInd_0 ... subAcct_9
-    // These MUST match exactly what buildRows() puts in field.key
-    this.txnRows.forEach((row, i) => {
-      group[`select_${i}`]    = [row.selected];
-      group[`autoInd_${i}`]   = [row.autoInd];
-      group[`balAction_${i}`] = [row.balAction];
-      group[`ctlTot_${i}`]    = [row.ctlTot];
-      group[`betc_${i}`]      = [row.betc,    row.selected ? [Validators.required] : []];
-      group[`revBetc_${i}`]   = [row.revBetc, row.selected ? [Validators.required] : []];
-      group[`subAcct_${i}`]   = [row.subAcct, [Validators.required]];
+    this.txnCodes.forEach((code, i) => {
+      const isSelected = this.selectedByDefault.includes(code);
+      group[`pt_select_${i}`]    = [isSelected];
+      group[`pt_autoInd_${i}`]   = [''];
+      group[`pt_balAction_${i}`] = [''];
+      group[`pt_ctlTot_${i}`]    = [''];
+      group[`pt_betc_${i}`]      = [
+        this.defaultBetc[code],
+        isSelected ? [Validators.required] : [],
+      ];
+      group[`pt_revBetc_${i}`]   = [
+        this.defaultRevBetc[code],
+        isSelected ? [Validators.required] : [],
+      ];
+      group[`pt_subAcct_${i}`]   = ['000', [Validators.required]];
     });
 
     this.form = this.fb.group(group);
+    this.buildRows();
   }
 
-  private buildRows(): void {
-    // Header row — all spacers, no form binding
+  private buildRows() {
+    // Header row — all __spacer__ keys, nothing binds to form
     const headerRow: BfmField[] = [
       { key: '__spacer__', label: 'Select',     type: 'label' },
       { key: '__spacer__', label: 'Txn Code',   type: 'label' },
@@ -135,16 +180,16 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
       { key: '__spacer__', label: 'Sub Acct',   type: 'label' },
     ];
 
-    // One data row per txnRow — keys MUST match buildForm() exactly
-    const dataRows: BfmField[][] = this.txnRows.map((row, i) => [
-      { key: `select_${i}`,    label: '',          type: 'checkbox' },
-      { key: '__spacer__',     label: row.txnCode, type: 'label'    },
-      { key: `autoInd_${i}`,   label: '',          type: 'dropdown', lookupCode: 'AUTO_IND'   },
-      { key: `balAction_${i}`, label: '',          type: 'dropdown', lookupCode: 'BAL_ACTION' },
-      { key: `ctlTot_${i}`,    label: '',          type: 'dropdown', lookupCode: 'CTL_TOT'    },
-      { key: `betc_${i}`,      label: '',          type: 'dropdown', lookupCode: 'BETC',     required: true },
-      { key: `revBetc_${i}`,   label: '',          type: 'dropdown', lookupCode: 'REV_BETC', required: true },
-      { key: `subAcct_${i}`,   label: '',          type: 'dropdown', lookupCode: 'SUB_ACCT', required: true },
+    // One data row per txn code — keys MUST match buildForm() exactly
+    const dataRows: BfmField[][] = this.txnCodes.map((code, i) => [
+      { key: `pt_select_${i}`,    label: '',   type: 'checkbox'  },
+      { key: '__spacer__',        label: code, type: 'label'     },
+      { key: `pt_autoInd_${i}`,   label: '',   type: 'dropdown', lookupCode: 'AUTO_IND'   },
+      { key: `pt_balAction_${i}`, label: '',   type: 'dropdown', lookupCode: 'BAL_ACTION' },
+      { key: `pt_ctlTot_${i}`,    label: '',   type: 'dropdown', lookupCode: 'CTL_TOT'    },
+      { key: `pt_betc_${i}`,      label: '',   type: 'dropdown', lookupCode: 'BETC',     required: true },
+      { key: `pt_revBetc_${i}`,   label: '',   type: 'dropdown', lookupCode: 'REV_BETC', required: true },
+      { key: `pt_subAcct_${i}`,   label: '',   type: 'dropdown', lookupCode: 'SUB_ACCT', required: true },
     ]);
 
     this.rows = [headerRow, ...dataRows];
@@ -152,11 +197,11 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
   }
 
   onSelectChange(index: number): void {
-    const selected    = this.form.get(`select_${index}`)?.value as boolean;
-    const betcCtrl    = this.form.get(`betc_${index}`);
-    const revBetcCtrl = this.form.get(`revBetc_${index}`);
+    const isSelected  = this.form.get(`pt_select_${index}`)?.value as boolean;
+    const betcCtrl    = this.form.get(`pt_betc_${index}`);
+    const revBetcCtrl = this.form.get(`pt_revBetc_${index}`);
 
-    if (selected) {
+    if (isSelected) {
       betcCtrl?.setValidators([Validators.required]);
       revBetcCtrl?.setValidators([Validators.required]);
     } else {
@@ -167,17 +212,25 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
     revBetcCtrl?.updateValueAndValidity();
   }
 
+  isFieldRequired(field: BfmField): boolean {
+    return field.required === true;
+  }
+
+  isReadonly(field: BfmField): boolean {
+    return field.readonly === true;
+  }
+
   onSubmit(): void {
     if (this.form.valid) {
-      const payload = this.txnRows.map((row, i) => ({
-        txnCode:   row.txnCode,
-        selected:  this.form.get(`select_${i}`)?.value    as boolean,
-        autoInd:   this.form.get(`autoInd_${i}`)?.value   as string,
-        balAction: this.form.get(`balAction_${i}`)?.value as string,
-        ctlTot:    this.form.get(`ctlTot_${i}`)?.value    as string,
-        betc:      this.form.get(`betc_${i}`)?.value      as string,
-        revBetc:   this.form.get(`revBetc_${i}`)?.value   as string,
-        subAcct:   this.form.get(`subAcct_${i}`)?.value   as string,
+      const payload = this.txnCodes.map((code, i) => ({
+        txnCode:   code,
+        selected:  this.form.get(`pt_select_${i}`)?.value    as boolean,
+        autoInd:   this.form.get(`pt_autoInd_${i}`)?.value   as string,
+        balAction: this.form.get(`pt_balAction_${i}`)?.value as string,
+        ctlTot:    this.form.get(`pt_ctlTot_${i}`)?.value    as string,
+        betc:      this.form.get(`pt_betc_${i}`)?.value      as string,
+        revBetc:   this.form.get(`pt_revBetc_${i}`)?.value   as string,
+        subAcct:   this.form.get(`pt_subAcct_${i}`)?.value   as string,
       }));
       console.log('Payment Txns payload:', payload);
       // Replace with: this.apiService.savePaymentTxns(payload).subscribe(...)
@@ -188,13 +241,5 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
 
   onCancel(): void {
     this.buildForm();
-  }
-
-  isFieldRequired(field: BfmField): boolean {
-    return field.required === true;
-  }
-
-  trackByIndex(index: number): number {
-    return index;
   }
 }

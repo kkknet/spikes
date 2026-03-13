@@ -37,14 +37,14 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
   private fb         = inject(FormBuilder);
   scoapMaxLength     = 14;
 
-  agencyCodes: string[]      = [];
-  programCatCodes: string[]  = [];
-  collectionTypes: string[]  = [];
+  agencyCodes: string[]     = [];
+  programCatCodes: string[] = [];
+  collectionTypes: string[] = [];
 
-  lookupOptions = signal<Record<string, string[]>>({});
+  lookupOptions = signal<Record<string, unknown>>({});
 
-  readonly yesNoOptions      = ['Y', 'N'];
-  readonly availTypeOptions  = ['X', 'F', ' '];
+  readonly yesNoOptions     = ['Y', 'N'];
+  readonly availTypeOptions = ['X', 'F', ' '];
 
   // 9 years from now
   readonly yearOptions = Array.from({ length: 10 }, (_, i) =>
@@ -54,10 +54,10 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
   rows: BfmField[][] = [];
 
   @Input() stepWizard!: StepWizardComponent;
-  form: FormGroup  = this.fb.group({});
-  isLoading        = signal(true);
+  form: FormGroup = this.fb.group({});
+  isLoading       = signal(true);
 
-  // Txn row definitions — single source of truth
+  // ── Single source of truth for txn rows ────────────────────────────────────
   private readonly txnCodes = [
     '105', '107', '109', '115', '117',
     '118', '171', '172', '173', '174',
@@ -78,6 +78,7 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
   private readonly selectedByDefault = [
     '105', '107', '109', '115', '117', '171', '172',
   ];
+  // ───────────────────────────────────────────────────────────────────────────
 
   ngOnInit() {
     this.initializeData();
@@ -92,7 +93,9 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
       'AUTO_IND', 'BAL_ACTION', 'CTL_TOT', 'BETC', 'REV_BETC', 'SUB_ACCT',
     ];
 
-    const lookupObservables = lookupCodes.map((code) => this.fetchLookup(code));
+    const lookupObservables = lookupCodes.map((code) =>
+      this.fetchLookup(code)
+    );
 
     // PR Fix: Use forkJoin to handle everything in one stream
     forkJoin({
@@ -103,45 +106,103 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
     })
       .pipe(
         finalize(() => {
-          this.buildForm();        // MUST be before isLoading.set(false)
+          this.buildForm();         // MUST be before isLoading.set(false)
           this.isLoading.set(false);
         })
       )
       .subscribe({
         next: (results) => {
-          // Map lookup results back by code
-          const mapped: Record<string, string[]> = {};
+          const mapped: Record<string, unknown> = {};
+
           lookupCodes.forEach((code, i) => {
-            mapped[code] = results.lookups[i] ?? [];
+            const raw = results.lookups[i];
+
+            // Handle both raw array and wrapped API response shapes
+            if (Array.isArray(raw)) {
+              mapped[code] = raw;
+            } else if (raw && typeof raw === 'object') {
+              const obj = raw as Record<string, unknown>;
+              mapped[code] =
+                (obj['data']   as string[]) ??
+                (obj['items']  as string[]) ??
+                (obj['value']  as string[]) ??
+                [];
+            } else {
+              mapped[code] = [];
+            }
           });
+
           this.lookupOptions.set(mapped);
-          this.agencyCodes     = results.agencyCodes   ?? [];
-          this.programCatCodes = results.programCategories ?? [];
-          this.collectionTypes = results.collectionTypes   ?? [];
+
+          // Debug — remove once confirmed working
+          console.log('lookupOptions BETC:',     this.lookupOptions()['BETC']);
+          console.log('lookupOptions AUTO_IND:', this.lookupOptions()['AUTO_IND']);
+
+          this.agencyCodes     = this.extractArray(results.agencyCodes);
+          this.programCatCodes = this.extractArray(results.programCategories);
+          this.collectionTypes = this.extractArray(results.collectionTypes);
         },
         error: (err) => console.error('Data initialization failed', err),
       });
   }
 
+  // ── Safely extracts string[] from any API response shape ───────────────────
+  private extractArray(raw: unknown): string[] {
+    if (Array.isArray(raw)) return raw as string[];
+    if (raw && typeof raw === 'object') {
+      const obj = raw as Record<string, unknown>;
+      if (Array.isArray(obj['data']))   return obj['data']  as string[];
+      if (Array.isArray(obj['items']))  return obj['items'] as string[];
+      if (Array.isArray(obj['value']))  return obj['value'] as string[];
+    }
+    return [];
+  }
+
+  // ── Returns a safe string[] for *ngFor — handles any API response shape ────
+  getOptions(lookupCode: string | undefined): string[] {
+    if (!lookupCode) return [];
+    const val = this.lookupOptions()[lookupCode];
+
+    if (Array.isArray(val)) return val as string[];
+
+    if (val && typeof val === 'object') {
+      const obj = val as Record<string, unknown>;
+      if (Array.isArray(obj['data']))   return obj['data']  as string[];
+      if (Array.isArray(obj['items']))  return obj['items'] as string[];
+      if (Array.isArray(obj['value']))  return obj['value'] as string[];
+      // Last resort — return string values from the object
+      return Object.values(obj).filter(
+        (v) => typeof v === 'string'
+      ) as string[];
+    }
+    return [];
+  }
+
   // ── Replace these with real apiService calls ────────────────────────────────
-  private fetchLookup(code: string): Observable<string[]> {
+  private fetchLookup(code: string): Observable<unknown> {
     return this.apiService.getLookup(code).pipe(
       catchError(() => of([]))
     );
   }
 
-  private fetchAgencyCodes(): Observable<string[]> {
-    return this.apiService.getAgencyCodes().pipe(catchError(() => of([])));
+  private fetchAgencyCodes(): Observable<unknown> {
+    return this.apiService.getAgencyCodes().pipe(
+      catchError(() => of([]))
+    );
   }
 
-  private fetchProgramCategories(): Observable<string[]> {
-    return this.apiService.getProgramCategories().pipe(catchError(() => of([])));
+  private fetchProgramCategories(): Observable<unknown> {
+    return this.apiService.getProgramCategories().pipe(
+      catchError(() => of([]))
+    );
   }
 
-  private fetchCollectionTypes(): Observable<string[]> {
-    return this.apiService.getCollectionTypes().pipe(catchError(() => of([])));
+  private fetchCollectionTypes(): Observable<unknown> {
+    return this.apiService.getCollectionTypes().pipe(
+      catchError(() => of([]))
+    );
   }
-  // ────────────────────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────────────
 
   private buildForm() {
     const group: Record<string, unknown> = {};
@@ -168,7 +229,7 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
   }
 
   private buildRows() {
-    // Header row — all __spacer__ keys, nothing binds to form
+    // Header row — all __spacer__ keys, never bound to form
     const headerRow: BfmField[] = [
       { key: '__spacer__', label: 'Select',     type: 'label' },
       { key: '__spacer__', label: 'Txn Code',   type: 'label' },
@@ -182,11 +243,11 @@ export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
 
     // One data row per txn code — keys MUST match buildForm() exactly
     const dataRows: BfmField[][] = this.txnCodes.map((code, i) => [
-      { key: `pt_select_${i}`,    label: '',   type: 'checkbox'  },
-      { key: '__spacer__',        label: code, type: 'label'     },
-      { key: `pt_autoInd_${i}`,   label: '',   type: 'dropdown', lookupCode: 'AUTO_IND'   },
-      { key: `pt_balAction_${i}`, label: '',   type: 'dropdown', lookupCode: 'BAL_ACTION' },
-      { key: `pt_ctlTot_${i}`,    label: '',   type: 'dropdown', lookupCode: 'CTL_TOT'    },
+      { key: `pt_select_${i}`,    label: '',   type: 'checkbox'                                        },
+      { key: '__spacer__',        label: code, type: 'label'                                           },
+      { key: `pt_autoInd_${i}`,   label: '',   type: 'dropdown', lookupCode: 'AUTO_IND'                },
+      { key: `pt_balAction_${i}`, label: '',   type: 'dropdown', lookupCode: 'BAL_ACTION'              },
+      { key: `pt_ctlTot_${i}`,    label: '',   type: 'dropdown', lookupCode: 'CTL_TOT'                 },
       { key: `pt_betc_${i}`,      label: '',   type: 'dropdown', lookupCode: 'BETC',     required: true },
       { key: `pt_revBetc_${i}`,   label: '',   type: 'dropdown', lookupCode: 'REV_BETC', required: true },
       { key: `pt_subAcct_${i}`,   label: '',   type: 'dropdown', lookupCode: 'SUB_ACCT', required: true },

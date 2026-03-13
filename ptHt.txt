@@ -1,228 +1,101 @@
-<div *ngIf="!isLoading(); else loadingTemplate">
-  <div tabindex="-1" class="fsa-grid general-bfm-grid" [formGroup]="form">
+<div *ngIf="!isLoading() && form; else loadingTemplate">
+  <div
+    #modalContainer
+    tabindex="-1"
+    class="fsa-grid"
+    [formGroup]="form"
+  >
+    <ng-container *ngFor="let row of rows">
+      <ng-container *ngFor="let field of row">
 
-    <!-- Tab Navigation -->
-    <div class="fsa-grid__1">
-      <nav class="fsa-tabs" aria-label="BFM Wizard Tabs">
-        <ul class="fsa-tabs__list">
-          <li class="fsa-tabs__item"><a class="fsa-tabs__link" routerLink="../general-bfm">General BFM</a></li>
-          <li class="fsa-tabs__item"><a class="fsa-tabs__link" routerLink="../commodities">Commodities</a></li>
-          <li class="fsa-tabs__item"><a class="fsa-tabs__link" routerLink="../years">Years</a></li>
-          <li class="fsa-tabs__item fsa-tabs__item--active">
-            <a class="fsa-tabs__link fsa-tabs__link--active" aria-current="page">Payment/Disbursement Txns</a>
-          </li>
-        </ul>
-      </nav>
-    </div>
+        <div class="fsa-grid__1/12">
 
-    <!-- Column Headers Row -->
-    <div class="fsa-grid__1">
-      <div class="fsa-grid payment-txns-header-row">
-        <div class="fsa-grid__1/8 col-header">Select</div>
-        <div class="fsa-grid__1/8 col-header">Txn<br />Code</div>
-        <div class="fsa-grid__1/8 col-header">Auto<br />Ind</div>
-        <div class="fsa-grid__1/8 col-header">Bal<br />Action</div>
-        <div class="fsa-grid__1/8 col-header">Ctl<br />Tot</div>
-        <div class="fsa-grid__1/8 col-header">BETC</div>
-        <div class="fsa-grid__1/8 col-header">REV<br />BETC</div>
-        <div class="fsa-grid__1/8 col-header">Sub<br />Acct</div>
-      </div>
-    </div>
+          <!-- SPACER — header labels and txn code display, never bound to form -->
+          <ng-container *ngIf="field.key === '__spacer__'">
+            <label class="fsa-field__label">{{ field.label }}</label>
+          </ng-container>
 
-    <!-- Data Rows -->
-    <div class="fsa-grid__1">
-      <ng-container *ngFor="let row of txnRows; let i = index; trackBy: trackByIndex">
-        <div class="fsa-grid payment-txns-row"
-             [class.payment-txns-row--selected]="form.get('selected_' + i)?.value"
-             [class.payment-txns-row--even]="i % 2 === 0">
+          <!-- INPUT -->
+          <ng-container *ngIf="field.type === 'input' && field.key !== '__spacer__'">
+            <div *ngIf="isReadonly(field)" class="fsa-read-only-text">
+              | {{ form.get(field.key)?.value }}
+            </div>
+            <input
+              *ngIf="!isReadonly(field)"
+              type="text"
+              class="fsa-input"
+              [formControlName]="field.key"
+              [attr.maxlength]="field.maxLength || 40"
+            />
+          </ng-container>
 
-          <!-- Select -->
-          <div class="fsa-grid__1/8 col-cell col-cell--center">
-            <div class="fsa-checkbox">
+          <!-- CHECKBOX -->
+          <ng-container *ngIf="field.type === 'checkbox' && field.key !== '__spacer__'">
+            <div class="fsa-field">
               <input
+                class="fsa-checkbox fsa-checkbox--solo"
+                [formControlName]="field.key"
                 type="checkbox"
-                [id]="'selected_' + i"
-                [formControlName]="'selected_' + i"
-                (change)="onSelectChange(i)"
-                class="fsa-checkbox__input"
+                [id]="'field_' + field.key"
+                (change)="onSelectChange(+field.key.split('_')[2])"
               />
-              <label [for]="'selected_' + i" class="fsa-checkbox__label">
-                <span class="fsa-sr-only">Select Txn {{ row.txnCode }}</span>
-              </label>
+              <label
+                class="fsa-field__label"
+                [for]="'field_' + field.key"
+              ></label>
             </div>
-          </div>
+          </ng-container>
 
-          <!-- Txn Code (readonly) -->
-          <div class="fsa-grid__1/8 col-cell col-cell--center">
-            <span class="fsa-read-only-text">{{ row.txnCode }}</span>
-          </div>
-
-          <!-- Auto Ind -->
-          <div class="fsa-grid__1/8 col-cell">
-            <ng-container *ngIf="form.get('selected_' + i)?.value; else disabledDropdown">
-              <select
-                [id]="'autoInd_' + i"
-                [formControlName]="'autoInd_' + i"
-                class="fsa-select fsa-select--small"
-                [attr.aria-label]="'Auto Ind for Txn ' + row.txnCode"
-              >
-                <option value=""></option>
-                <option *ngFor="let opt of autoIndOptions" [value]="opt.value">{{ opt.label }}</option>
-              </select>
-            </ng-container>
-            <ng-template #disabledDropdown>
-              <select class="fsa-select fsa-select--small" disabled aria-hidden="true">
-                <option></option>
-              </select>
-            </ng-template>
-          </div>
-
-          <!-- Bal Action -->
-          <div class="fsa-grid__1/8 col-cell">
-            <ng-container *ngIf="form.get('selected_' + i)?.value; else disabledBalAction">
-              <select
-                [id]="'balAction_' + i"
-                [formControlName]="'balAction_' + i"
-                class="fsa-select fsa-select--small"
-                [attr.aria-label]="'Bal Action for Txn ' + row.txnCode"
-              >
-                <option value=""></option>
-                <option *ngFor="let opt of balActionOptions" [value]="opt.value">{{ opt.label }}</option>
-              </select>
-            </ng-container>
-            <ng-template #disabledBalAction>
-              <select class="fsa-select fsa-select--small" disabled aria-hidden="true">
-                <option></option>
-              </select>
-            </ng-template>
-          </div>
-
-          <!-- Ctl Tot -->
-          <div class="fsa-grid__1/8 col-cell">
-            <ng-container *ngIf="form.get('selected_' + i)?.value; else disabledCtlTot">
-              <select
-                [id]="'ctlTot_' + i"
-                [formControlName]="'ctlTot_' + i"
-                class="fsa-select fsa-select--small"
-                [attr.aria-label]="'Ctl Tot for Txn ' + row.txnCode"
-              >
-                <option value=""></option>
-                <option *ngFor="let opt of ctlTotOptions" [value]="opt.value">{{ opt.label }}</option>
-              </select>
-            </ng-container>
-            <ng-template #disabledCtlTot>
-              <select class="fsa-select fsa-select--small" disabled aria-hidden="true">
-                <option></option>
-              </select>
-            </ng-template>
-          </div>
-
-          <!-- BETC -->
-          <div class="fsa-grid__1/8 col-cell">
+          <!-- DROPDOWN -->
+          <ng-container *ngIf="field.type === 'dropdown' && field.key !== '__spacer__'">
             <select
-              [id]="'betc_' + i"
-              [formControlName]="'betc_' + i"
-              class="fsa-select fsa-select--small"
-              [class.fsa-select--error]="form.get('betc_' + i)?.invalid && form.get('betc_' + i)?.touched"
-              [attr.aria-label]="'BETC for Txn ' + row.txnCode"
-              [attr.aria-required]="form.get('selected_' + i)?.value"
+              class="fsa-select"
+              [formControlName]="field.key"
+              [id]="'field_' + field.key"
             >
               <option value=""></option>
-              <option *ngFor="let opt of betcOptions" [value]="opt.value">{{ opt.label }}</option>
+              <option
+                *ngFor="let opt of lookupOptions()[field.lookupCode || '']"
+                [value]="opt"
+              >{{ opt }}</option>
             </select>
             <div
               class="fsa-error-message"
-              *ngIf="form.get('betc_' + i)?.errors?.['required'] && form.get('betc_' + i)?.touched"
-            >
-              BETC is required
-            </div>
-          </div>
-
-          <!-- REV BETC -->
-          <div class="fsa-grid__1/8 col-cell">
-            <select
-              [id]="'revBetc_' + i"
-              [formControlName]="'revBetc_' + i"
-              class="fsa-select fsa-select--small"
-              [class.fsa-select--error]="form.get('revBetc_' + i)?.invalid && form.get('revBetc_' + i)?.touched"
-              [attr.aria-label]="'REV BETC for Txn ' + row.txnCode"
-              [attr.aria-required]="form.get('selected_' + i)?.value"
-            >
-              <option value=""></option>
-              <option *ngFor="let opt of revBetcOptions" [value]="opt.value">{{ opt.label }}</option>
-            </select>
-            <div
-              class="fsa-error-message"
-              *ngIf="form.get('revBetc_' + i)?.errors?.['required'] && form.get('revBetc_' + i)?.touched"
-            >
-              REV BETC is required
-            </div>
-          </div>
-
-          <!-- Sub Acct -->
-          <div class="fsa-grid__1/8 col-cell">
-            <select
-              [id]="'subAcct_' + i"
-              [formControlName]="'subAcct_' + i"
-              class="fsa-select fsa-select--small"
-              [class.fsa-select--error]="form.get('subAcct_' + i)?.invalid && form.get('subAcct_' + i)?.touched"
-              [attr.aria-label]="'Sub Acct for Txn ' + row.txnCode"
-              aria-required="true"
-            >
-              <option value=""></option>
-              <option *ngFor="let opt of subAcctOptions" [value]="opt.value">{{ opt.label }}</option>
-            </select>
-            <div
-              class="fsa-error-message"
-              *ngIf="form.get('subAcct_' + i)?.errors?.['required'] && form.get('subAcct_' + i)?.touched"
+              *ngIf="form.get(field.key)?.errors?.['required'] && form.get(field.key)?.touched"
             >
               Required
             </div>
-          </div>
+          </ng-container>
+
+          <!-- LABEL type (column headers) -->
+          <ng-container *ngIf="field.type === 'label' && field.key !== '__spacer__'">
+            <label class="fsa-field__label">{{ field.label }}</label>
+          </ng-container>
 
         </div>
+
       </ng-container>
-    </div>
-
-    <!-- Footer Links -->
-    <div class="fsa-grid__1 footer-section">
-      <div class="fsa-grid fsa-grid--gutters">
-        <div class="fsa-grid__1/2">
-          <strong class="footer-heading">Program Information</strong>
-          <ul class="footer-links">
-            <li><a href="#" class="fsa-link">About PFRS</a></li>
-          </ul>
-        </div>
-        <div class="fsa-grid__1/2">
-          <strong class="footer-heading">Agency Guidelines</strong>
-          <ul class="footer-links">
-            <li><a href="#" class="fsa-link">Publications</a></li>
-            <li><a href="#" class="fsa-link">Handbooks</a></li>
-            <li><a href="#" class="fsa-link">Notices</a></li>
-            <li><a href="#" class="fsa-link">FFAS Employee Forms</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    </ng-container>
 
     <!-- Action Buttons -->
     <div class="fsa-grid__1">
-      <div class="fsa-grid fsa-grid--gutters action-buttons">
-        <div class="fsa-grid__1 action-buttons__right">
-          <button type="button" class="fsa-btn fsa-btn--secondary" (click)="onCancel()">Cancel</button>
-          <button type="button" class="fsa-btn fsa-btn--primary" (click)="onSubmit()">Save</button>
-        </div>
-      </div>
+      <button
+        type="button"
+        class="fsa-btn fsa-btn--secondary"
+        (click)="onCancel()"
+      >Cancel</button>
+      <button
+        type="button"
+        class="fsa-btn fsa-btn--primary"
+        (click)="onSubmit()"
+      >Save</button>
     </div>
 
   </div>
 </div>
 
-<!-- Loading Template -->
 <ng-template #loadingTemplate>
   <div class="fsa-loading" aria-live="polite" aria-busy="true">
-    <span class="fsa-loading__item">
-      <span class="fsa-sr-only">Loading&hellip;</span>
-    </span>
+    <span class="fsa-sr-only">Loading&hellip;</span>
   </div>
 </ng-template>

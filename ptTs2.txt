@@ -1,0 +1,200 @@
+import { Component, OnInit, AfterViewInit, signal, inject } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { forkJoin, Observable } from 'rxjs';
+import { finalize } from 'rxjs/operators';
+import { ApiService } from '../../../../../shared/services/api.service'; // update path as needed
+
+export interface BfmField {
+  key: string;
+  label: string;
+  type: 'input' | 'dropdown' | 'checkbox' | 'label';
+  lookupCode?: string;
+  options?: string[];
+  required?: boolean;
+  maxLength?: number;
+  readonly?: boolean;
+  txnCode?: string;
+}
+
+export interface PaymentTxnRow {
+  selected: boolean;
+  txnCode: string;
+  autoInd: string;
+  balAction: string;
+  ctlTot: string;
+  betc: string;
+  revBetc: string;
+  subAcct: string;
+}
+
+@Component({
+  selector: 'app-payment-transactions',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './payment-transactions.component.html',
+  styleUrl: './payment-transactions.component.scss',
+})
+export class PaymentTransactionsComponent implements OnInit, AfterViewInit {
+
+  private apiService = inject(ApiService);
+  private fb         = inject(FormBuilder);
+
+  form: FormGroup       = this.fb.group({});
+  isLoading             = signal(true);
+  rows: BfmField[][]    = [];
+  lookupOptions         = signal<Record<string, string[]>>({});
+
+  readonly txnRows: PaymentTxnRow[] = [
+    { selected: true,  txnCode: '105', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGF',   revBetc: 'DISGFAJ', subAcct: '000' },
+    { selected: true,  txnCode: '107', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: true,  txnCode: '109', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGF',   revBetc: 'DISGFAJ', subAcct: '000' },
+    { selected: true,  txnCode: '115', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: true,  txnCode: '117', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: false, txnCode: '118', autoInd: '', balAction: '', ctlTot: '', betc: '',         revBetc: '',        subAcct: '000' },
+    { selected: true,  txnCode: '171', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: true,  txnCode: '172', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: false, txnCode: '173', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+    { selected: false, txnCode: '174', autoInd: '', balAction: '', ctlTot: '', betc: 'DISGFAJ', revBetc: 'DISGF',   subAcct: '000' },
+  ];
+
+  ngOnInit(): void {
+    this.initializeData();
+  }
+
+  ngAfterViewInit(): void {}
+
+  // ─── Replace these with your real apiService calls ──────────────────────────
+  private fetchLookup(code: string): Observable<string[]> {
+    const mock: Record<string, string[]> = {
+      AUTO_IND:   ['Y', 'N'],
+      BAL_ACTION: ['D', 'C'],
+      CTL_TOT:    ['Y', 'N'],
+      BETC:       ['DISGF', 'DISGFAJ'],
+      REV_BETC:   ['DISGF', 'DISGFAJ'],
+      SUB_ACCT:   ['000', '001'],
+    };
+    const { of } = require('rxjs');
+    return of(mock[code] ?? []);
+  }
+  // ────────────────────────────────────────────────────────────────────────────
+
+  private initializeData(): void {
+    // PR Fix: Use forkJoin to handle everything in one stream
+    forkJoin({
+      AUTO_IND:   this.fetchLookup('AUTO_IND'),
+      BAL_ACTION: this.fetchLookup('BAL_ACTION'),
+      CTL_TOT:    this.fetchLookup('CTL_TOT'),
+      BETC:       this.fetchLookup('BETC'),
+      REV_BETC:   this.fetchLookup('REV_BETC'),
+      SUB_ACCT:   this.fetchLookup('SUB_ACCT'),
+    })
+      .pipe(
+        finalize(() => {
+          this.buildForm();   // ← MUST be before isLoading.set(false)
+          this.buildRows();
+          this.isLoading.set(false);
+        })
+      )
+      .subscribe({
+        next: (results) => {
+          this.lookupOptions.set(results as Record<string, string[]>);
+        },
+        error: (err) => console.error('Data initialization failed', err),
+      });
+  }
+
+  private buildForm(): void {
+    const group: Record<string, unknown> = {};
+
+    // Keys follow pattern: select_0, autoInd_0 ... subAcct_9
+    // These MUST match exactly what buildRows() puts in field.key
+    this.txnRows.forEach((row, i) => {
+      group[`select_${i}`]    = [row.selected];
+      group[`autoInd_${i}`]   = [row.autoInd];
+      group[`balAction_${i}`] = [row.balAction];
+      group[`ctlTot_${i}`]    = [row.ctlTot];
+      group[`betc_${i}`]      = [row.betc,    row.selected ? [Validators.required] : []];
+      group[`revBetc_${i}`]   = [row.revBetc, row.selected ? [Validators.required] : []];
+      group[`subAcct_${i}`]   = [row.subAcct, [Validators.required]];
+    });
+
+    this.form = this.fb.group(group);
+  }
+
+  private buildRows(): void {
+    // Header row — all spacers, no form binding
+    const headerRow: BfmField[] = [
+      { key: '__spacer__', label: 'Select',     type: 'label' },
+      { key: '__spacer__', label: 'Txn Code',   type: 'label' },
+      { key: '__spacer__', label: 'Auto Ind',   type: 'label' },
+      { key: '__spacer__', label: 'Bal Action', type: 'label' },
+      { key: '__spacer__', label: 'Ctl Tot',    type: 'label' },
+      { key: '__spacer__', label: 'BETC',       type: 'label' },
+      { key: '__spacer__', label: 'REV BETC',   type: 'label' },
+      { key: '__spacer__', label: 'Sub Acct',   type: 'label' },
+    ];
+
+    // One data row per txnRow — keys MUST match buildForm() exactly
+    const dataRows: BfmField[][] = this.txnRows.map((row, i) => [
+      { key: `select_${i}`,    label: '',          type: 'checkbox' },
+      { key: '__spacer__',     label: row.txnCode, type: 'label'    },
+      { key: `autoInd_${i}`,   label: '',          type: 'dropdown', lookupCode: 'AUTO_IND'   },
+      { key: `balAction_${i}`, label: '',          type: 'dropdown', lookupCode: 'BAL_ACTION' },
+      { key: `ctlTot_${i}`,    label: '',          type: 'dropdown', lookupCode: 'CTL_TOT'    },
+      { key: `betc_${i}`,      label: '',          type: 'dropdown', lookupCode: 'BETC',     required: true },
+      { key: `revBetc_${i}`,   label: '',          type: 'dropdown', lookupCode: 'REV_BETC', required: true },
+      { key: `subAcct_${i}`,   label: '',          type: 'dropdown', lookupCode: 'SUB_ACCT', required: true },
+    ]);
+
+    this.rows = [headerRow, ...dataRows];
+    console.log('rows in pmnt txns', this.rows);
+  }
+
+  onSelectChange(index: number): void {
+    const selected    = this.form.get(`select_${index}`)?.value as boolean;
+    const betcCtrl    = this.form.get(`betc_${index}`);
+    const revBetcCtrl = this.form.get(`revBetc_${index}`);
+
+    if (selected) {
+      betcCtrl?.setValidators([Validators.required]);
+      revBetcCtrl?.setValidators([Validators.required]);
+    } else {
+      betcCtrl?.clearValidators();
+      revBetcCtrl?.clearValidators();
+    }
+    betcCtrl?.updateValueAndValidity();
+    revBetcCtrl?.updateValueAndValidity();
+  }
+
+  onSubmit(): void {
+    if (this.form.valid) {
+      const payload = this.txnRows.map((row, i) => ({
+        txnCode:   row.txnCode,
+        selected:  this.form.get(`select_${i}`)?.value    as boolean,
+        autoInd:   this.form.get(`autoInd_${i}`)?.value   as string,
+        balAction: this.form.get(`balAction_${i}`)?.value as string,
+        ctlTot:    this.form.get(`ctlTot_${i}`)?.value    as string,
+        betc:      this.form.get(`betc_${i}`)?.value      as string,
+        revBetc:   this.form.get(`revBetc_${i}`)?.value   as string,
+        subAcct:   this.form.get(`subAcct_${i}`)?.value   as string,
+      }));
+      console.log('Payment Txns payload:', payload);
+      // Replace with: this.apiService.savePaymentTxns(payload).subscribe(...)
+    } else {
+      this.form.markAllAsTouched();
+    }
+  }
+
+  onCancel(): void {
+    this.buildForm();
+  }
+
+  isFieldRequired(field: BfmField): boolean {
+    return field.required === true;
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+}

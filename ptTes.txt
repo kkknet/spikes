@@ -1,0 +1,443 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { PaymentTransactionsComponent } from './payment-transactions.component';
+import { HttpParams } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
+import { ApiService } from '../../../../../../core/services/api.service';
+import { ElementRef } from '@angular/core';
+import { FormControl } from '@angular/forms';
+
+describe('PaymentTransactionsComponent', () => {
+  let component: PaymentTransactionsComponent;
+  let fixture: ComponentFixture<PaymentTransactionsComponent>;
+  let apiServiceSpy: jest.Mocked<ApiService>;
+
+  beforeEach(async () => {
+    apiServiceSpy = {
+      get: jest.fn(),
+    } as any;
+
+    apiServiceSpy.get.mockReturnValue(of({ Data: [] }));
+
+    await TestBed.configureTestingModule({
+      imports: [PaymentTransactionsComponent],
+      providers: [{ provide: ApiService, useValue: apiServiceSpy }],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(PaymentTransactionsComponent);
+    component = fixture.componentInstance;
+    component.stepWizard = { disabledSteps: new Set<number>() } as any;
+    fixture.detectChanges();
+  });
+
+  // ── Basic creation ─────────────────────────────────────────────────────────
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should initialize form and rows on init', () => {
+    expect(component.form).toBeTruthy();
+    expect(component.rows.length).toBeGreaterThan(0);
+  });
+
+  // ── initializeData error handling ──────────────────────────────────────────
+
+  it('should handle API errors in initializeData', () => {
+    const spyConsole = jest.spyOn(console, 'error').mockImplementation();
+    const err = new Error('API failure');
+
+    component['initializeData'] = () => {
+      component['isLoading'].set(false);
+      console.error('Data initialization failed', err);
+    };
+
+    component['initializeData']();
+    expect(spyConsole).toHaveBeenCalledWith('Data initialization failed', err);
+  });
+
+  it('should handle API errors in all fetch methods', (done) => {
+    const spyConsole = jest.spyOn(console, 'error').mockImplementation();
+    apiServiceSpy.get.mockReturnValue(
+      throwError(() => new Error('Server Error')),
+    );
+
+    component['initializeData']();
+
+    setTimeout(() => {
+      expect(component.agencyCodes).toEqual([]);
+      expect(component.programCatCodes).toContain('17');
+      expect(spyConsole).toHaveBeenCalledWith(
+        'Data initialization failed',
+        expect.any(Error),
+      );
+      done();
+    });
+  });
+
+  // ── fetchLookup ────────────────────────────────────────────────────────────
+
+  it('should handle empty Data array for fetchLookup', (done) => {
+    const mockRes = { Data: [] };
+    apiServiceSpy.get.mockReturnValue(of(mockRes));
+
+    component['fetchLookup']('BETC').subscribe(() => {
+      expect(component.lookupOptions()['BETC']).toEqual([]);
+      done();
+    });
+  });
+
+  it('should populate lookupOptions from fetchLookup', (done) => {
+    const mockRes = {
+      Data: [{ lookupValue: 'DISGF' }, { lookupValue: 'DISGFAJ' }],
+    };
+    apiServiceSpy.get.mockReturnValue(of(mockRes));
+
+    component['fetchLookup']('BETC').subscribe(() => {
+      expect(component.lookupOptions()['BETC']).toEqual(['DISGF', 'DISGFAJ']);
+      done();
+    });
+  });
+
+  // ── fetchAgencyCodes ───────────────────────────────────────────────────────
+
+  it('should handle empty Data array in fetchAgencyCodes', (done) => {
+    const mockRes = { Data: [] };
+    apiServiceSpy.get.mockReturnValue(of(mockRes));
+
+    component['fetchAgencyCodes']().subscribe(() => {
+      expect(component.agencyCodes).toEqual([]);
+      done();
+    });
+  });
+
+  it('should populate agencyCodes from fetchAgencyCodes', (done) => {
+    const mockRes = {
+      Data: [{ programGroupCode: 'A1' }, { programGroupCode: 'B2' }],
+    };
+    apiServiceSpy.get.mockReturnValue(of(mockRes));
+
+    component['fetchAgencyCodes']().subscribe(() => {
+      expect(component.agencyCodes).toEqual(['A1', 'B2']);
+      done();
+    });
+  });
+
+  // ── fetchProgramCategories ─────────────────────────────────────────────────
+
+  it('should handle empty Data array in fetchProgramCategories', (done) => {
+    const mockRes = { Data: [] };
+    apiServiceSpy.get.mockReturnValue(of(mockRes));
+
+    component['fetchProgramCategories']().subscribe(() => {
+      expect(component.programCatCodes).toEqual([]);
+      done();
+    });
+  });
+
+  it('should populate programCatCodes from fetchProgramCategories', (done) => {
+    const mockRes = {
+      Data: [{ programCategoryCode: 'C1' }, { programCategoryCode: 'C2' }],
+    };
+    apiServiceSpy.get.mockReturnValue(of(mockRes));
+
+    component['fetchProgramCategories']().subscribe(() => {
+      expect(component.programCatCodes).toEqual(['C1', 'C2']);
+      done();
+    });
+  });
+
+  // ── fetchCollectionTypes ───────────────────────────────────────────────────
+
+  it('should handle empty Data array in fetchCollectionTypes', (done) => {
+    const mockRes = { Data: [] };
+    apiServiceSpy.get.mockReturnValue(of(mockRes));
+
+    component['fetchCollectionTypes']().subscribe(() => {
+      expect(component.collectionTypes).toEqual([]);
+      done();
+    });
+  });
+
+  // ── buildForm ──────────────────────────────────────────────────────────────
+
+  it('should create form controls for all txn rows', () => {
+    const txnCodes = component['txnCodes'];
+    txnCodes.forEach((_, i) => {
+      expect(component.form.get(`pt_select_${i}`)).toBeTruthy();
+      expect(component.form.get(`pt_autoInd_${i}`)).toBeTruthy();
+      expect(component.form.get(`pt_balAction_${i}`)).toBeTruthy();
+      expect(component.form.get(`pt_ctlTot_${i}`)).toBeTruthy();
+      expect(component.form.get(`pt_betc_${i}`)).toBeTruthy();
+      expect(component.form.get(`pt_revBetc_${i}`)).toBeTruthy();
+      expect(component.form.get(`pt_subAcct_${i}`)).toBeTruthy();
+    });
+  });
+
+  it('should set selected rows correctly by default', () => {
+    const selectedByDefault = component['selectedByDefault'];
+    component['txnCodes'].forEach((code, i) => {
+      const val = component.form.get(`pt_select_${i}`)?.value;
+      if (selectedByDefault.includes(code)) {
+        expect(val).toBe(true);
+      } else {
+        expect(val).toBe(false);
+      }
+    });
+  });
+
+  it('should set default BETC values correctly', () => {
+    // Row 0 = txn 105 → DISGF
+    expect(component.form.get('pt_betc_0')?.value).toBe('DISGF');
+    // Row 1 = txn 107 → DISGFAJ
+    expect(component.form.get('pt_betc_1')?.value).toBe('DISGFAJ');
+    // Row 5 = txn 118 → empty (not selected)
+    expect(component.form.get('pt_betc_5')?.value).toBe('');
+  });
+
+  it('should set default REV BETC values correctly', () => {
+    // Row 0 = txn 105 → DISGFAJ
+    expect(component.form.get('pt_revBetc_0')?.value).toBe('DISGFAJ');
+    // Row 1 = txn 107 → DISGF
+    expect(component.form.get('pt_revBetc_1')?.value).toBe('DISGF');
+  });
+
+  it('should set subAcct default to 000 for all rows', () => {
+    component['txnCodes'].forEach((_, i) => {
+      expect(component.form.get(`pt_subAcct_${i}`)?.value).toBe('000');
+    });
+  });
+
+  it('should require BETC for selected rows', () => {
+    // Row 0 (105) is selected — BETC should be required
+    const betcCtrl = component.form.get('pt_betc_0');
+    betcCtrl?.setValue('');
+    betcCtrl?.updateValueAndValidity();
+    expect(betcCtrl?.errors?.['required']).toBeTruthy();
+  });
+
+  it('should not require BETC for unselected rows', () => {
+    // Row 5 (118) is not selected — BETC should not be required
+    const betcCtrl = component.form.get('pt_betc_5');
+    betcCtrl?.setValue('');
+    betcCtrl?.updateValueAndValidity();
+    expect(betcCtrl?.errors).toBeNull();
+  });
+
+  it('should always require subAcct', () => {
+    const subAcctCtrl = component.form.get('pt_subAcct_0');
+    subAcctCtrl?.setValue('');
+    subAcctCtrl?.updateValueAndValidity();
+    expect(subAcctCtrl?.errors?.['required']).toBeTruthy();
+  });
+
+  // ── buildRows ──────────────────────────────────────────────────────────────
+
+  it('should build rows with header row + one row per txn code', () => {
+    // 1 header + 10 data rows
+    expect(component.rows.length).toBe(11);
+  });
+
+  it('should have all __spacer__ keys in header row', () => {
+    const headerRow = component.rows[0];
+    headerRow.forEach((field) => {
+      expect(field.key).toBe('__spacer__');
+    });
+  });
+
+  it('should have correct field keys in data rows matching form controls', () => {
+    component['txnCodes'].forEach((_, i) => {
+      const dataRow = component.rows[i + 1]; // +1 to skip header
+      const keys = dataRow.map((f) => f.key);
+      expect(keys).toContain(`pt_select_${i}`);
+      expect(keys).toContain(`pt_betc_${i}`);
+      expect(keys).toContain(`pt_revBetc_${i}`);
+      expect(keys).toContain(`pt_subAcct_${i}`);
+    });
+  });
+
+  it('should display txn code as spacer label in each data row', () => {
+    const expectedCodes = component['txnCodes'];
+    expectedCodes.forEach((code, i) => {
+      const dataRow = component.rows[i + 1];
+      const spacer = dataRow.find(
+        (f) => f.key === '__spacer__' && f.label === code,
+      );
+      expect(spacer).toBeTruthy();
+    });
+  });
+
+  // ── onSelectChange ─────────────────────────────────────────────────────────
+
+  it('should add required validators to BETC and REV BETC when row selected', () => {
+    // Deselect row 0 first then reselect
+    component.form.get('pt_select_0')?.setValue(false);
+    component.onSelectChange(0);
+
+    component.form.get('pt_select_0')?.setValue(true);
+    component.onSelectChange(0);
+
+    const betcCtrl = component.form.get('pt_betc_0');
+    betcCtrl?.setValue('');
+    betcCtrl?.updateValueAndValidity();
+    expect(betcCtrl?.errors?.['required']).toBeTruthy();
+  });
+
+  it('should remove required validators from BETC and REV BETC when row deselected', () => {
+    component.form.get('pt_select_0')?.setValue(false);
+    component.onSelectChange(0);
+
+    const betcCtrl    = component.form.get('pt_betc_0');
+    const revBetcCtrl = component.form.get('pt_revBetc_0');
+
+    betcCtrl?.setValue('');
+    revBetcCtrl?.setValue('');
+    betcCtrl?.updateValueAndValidity();
+    revBetcCtrl?.updateValueAndValidity();
+
+    expect(betcCtrl?.errors).toBeNull();
+    expect(revBetcCtrl?.errors).toBeNull();
+  });
+
+  // ── getOptions ─────────────────────────────────────────────────────────────
+
+  it('should return empty array if lookupCode is undefined', () => {
+    const result = component.getOptions(undefined);
+    expect(result).toEqual([]);
+  });
+
+  it('should return empty array if lookupCode not found in options', () => {
+    const result = component.getOptions('UNKNOWN_CODE');
+    expect(result).toEqual([]);
+  });
+
+  it('should return lookup options if lookupCode exists as array', () => {
+    component.lookupOptions.set({ BETC: ['DISGF', 'DISGFAJ'] });
+    const result = component.getOptions('BETC');
+    expect(result).toEqual(['DISGF', 'DISGFAJ']);
+  });
+
+  it('should unwrap data property if lookupOptions returns object with data array', () => {
+    component.lookupOptions.set({ BETC: { data: ['DISGF', 'DISGFAJ'] } as any });
+    const result = component.getOptions('BETC');
+    expect(result).toEqual(['DISGF', 'DISGFAJ']);
+  });
+
+  it('should unwrap items property if lookupOptions returns object with items array', () => {
+    component.lookupOptions.set({ BETC: { items: ['DISGF'] } as any });
+    const result = component.getOptions('BETC');
+    expect(result).toEqual(['DISGF']);
+  });
+
+  // ── isFieldRequired ────────────────────────────────────────────────────────
+
+  it('should return true for required field', () => {
+    const field = { key: 'pt_betc_0', required: true } as any;
+    expect(component.isFieldRequired(field)).toBe(true);
+  });
+
+  it('should return false for non-required field', () => {
+    const field = { key: 'pt_autoInd_0', required: false } as any;
+    expect(component.isFieldRequired(field)).toBe(false);
+  });
+
+  it('should return false when required is undefined', () => {
+    const field = { key: 'pt_autoInd_0' } as any;
+    expect(component.isFieldRequired(field)).toBe(false);
+  });
+
+  // ── isReadonly ─────────────────────────────────────────────────────────────
+
+  it('should return true for readonly field', () => {
+    const field = { key: 'pt_betc_0', readonly: true } as any;
+    expect(component.isReadonly(field)).toBe(true);
+  });
+
+  it('should return false for non-readonly field', () => {
+    const field = { key: 'pt_betc_0', readonly: false } as any;
+    expect(component.isReadonly(field)).toBe(false);
+  });
+
+  // ── onSubmit ───────────────────────────────────────────────────────────────
+
+  it('should log payload when form is valid', () => {
+    const spyLog = jest.spyOn(console, 'log').mockImplementation();
+
+    // Fill all required fields
+    component['txnCodes'].forEach((_, i) => {
+      component.form.get(`pt_betc_${i}`)?.setValue('DISGF');
+      component.form.get(`pt_revBetc_${i}`)?.setValue('DISGFAJ');
+      component.form.get(`pt_subAcct_${i}`)?.setValue('000');
+    });
+
+    component.onSubmit();
+    expect(spyLog).toHaveBeenCalledWith(
+      'Payment Txns payload:',
+      expect.any(Array),
+    );
+  });
+
+  it('should mark all fields as touched when form is invalid', () => {
+    // Clear a required subAcct to make form invalid
+    component.form.get('pt_subAcct_0')?.setValue('');
+    component.form.get('pt_subAcct_0')?.updateValueAndValidity();
+
+    const spy = jest.spyOn(component.form, 'markAllAsTouched');
+    component.onSubmit();
+    expect(spy).toHaveBeenCalled();
+  });
+
+  // ── onCancel ───────────────────────────────────────────────────────────────
+
+  it('should reset form to defaults on cancel', () => {
+    // Change a value then cancel
+    component.form.get('pt_betc_0')?.setValue('CHANGED');
+    component.onCancel();
+    expect(component.form.get('pt_betc_0')?.value).toBe('DISGF');
+  });
+
+  // ── ngAfterViewInit ────────────────────────────────────────────────────────
+
+  describe('ngAfterViewInit', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('should focus modal container', () => {
+      const element = document.createElement('div');
+      element.setAttribute('tabindex', '0');
+      component.modalContainer = new ElementRef(element);
+      const focusSpy = jest.spyOn(element, 'focus');
+
+      component.ngAfterViewInit();
+      jest.advanceTimersByTime(100);
+
+      expect(focusSpy).toHaveBeenCalled();
+    });
+  });
+
+  // ── extractArray ───────────────────────────────────────────────────────────
+
+  it('should extract array directly if raw is array', () => {
+    const result = component['extractArray'](['A', 'B']);
+    expect(result).toEqual(['A', 'B']);
+  });
+
+  it('should extract data property from object', () => {
+    const result = component['extractArray']({ data: ['X', 'Y'] });
+    expect(result).toEqual(['X', 'Y']);
+  });
+
+  it('should extract items property from object', () => {
+    const result = component['extractArray']({ items: ['X'] });
+    expect(result).toEqual(['X']);
+  });
+
+  it('should return empty array for null or undefined', () => {
+    expect(component['extractArray'](null)).toEqual([]);
+    expect(component['extractArray'](undefined)).toEqual([]);
+  });
+});

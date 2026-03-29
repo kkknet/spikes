@@ -1,0 +1,182 @@
+Update buildForm() in .ts
+Replace the existing buildForm() with this:
+
+private buildForm() {
+  const group: Record<string, unknown> = {};
+
+  this.txnCodes.forEach((code, i) => {
+    const isSelected = this.selectedByDefault.includes(code);
+    const hasBetc    = !!this.defaultBetc[code];
+
+    // Select checkbox
+    group[`pt_select_${i}`] = [isSelected];
+
+    // Auto Ind — Required, Y or N only
+    group[`pt_autoInd_${i}`] = [
+      '',
+      isSelected ? [Validators.required, Validators.pattern(/^[YN]$/)] : [],
+    ];
+
+    // Bal Action — Not required, +, -, or space only, default space
+    group[`pt_balAction_${i}`] = [
+      ' ',
+      [Validators.pattern(/^[+\- ]$/)],
+    ];
+
+    // Ctl Tot — Not required, default space, from CTU lookup
+    group[`pt_ctlTot_${i}`] = [' '];
+
+    // BETC — Not required, from BTC lookup, default spaces if nothing selected
+    group[`pt_betc_${i}`] = [
+      this.defaultBetc[code] || '        ', // 8 spaces if no default
+      [Validators.maxLength(8)],
+    ];
+
+    // REV BETC — Not required, from BTC lookup, default spaces if nothing selected
+    group[`pt_revBetc_${i}`] = [
+      this.defaultRevBetc[code] || '        ', // 8 spaces if no default
+      [Validators.maxLength(8)],
+    ];
+
+    // Sub Acct — Required if BETC present, default 000 if BETC present
+    // default spaces if BETC not present, from SAC lookup
+    group[`pt_subAcct_${i}`] = [
+      hasBetc ? '000' : '   ', // 3 spaces if no BETC
+      hasBetc ? [Validators.required, Validators.maxLength(3)] : [Validators.maxLength(3)],
+    ];
+  });
+
+  this.form = this.fb.group(group);
+  this.setupSubAcctValidation();
+  this.buildRows();
+}
+
+
+
+
+
+Change 2 — Add setupSubAcctValidation() method
+
+private setupSubAcctValidation(): void {
+  this.txnCodes.forEach((_, i) => {
+    const betcCtrl    = this.form.get(`pt_betc_${i}`);
+    const subAcctCtrl = this.form.get(`pt_subAcct_${i}`);
+
+    betcCtrl?.valueChanges.subscribe((betcVal: string) => {
+      const hasBetc = betcVal && betcVal.trim().length > 0;
+
+      if (hasBetc) {
+        subAcctCtrl?.setValidators([
+          Validators.required,
+          Validators.maxLength(3),
+        ]);
+        // Default to 000 if currently spaces
+        if (!subAcctCtrl?.value?.trim()) {
+          subAcctCtrl?.setValue('000', { emitEvent: false });
+        }
+      } else {
+        subAcctCtrl?.clearValidators();
+        subAcctCtrl?.addValidators([Validators.maxLength(3)]);
+        // Default to spaces if BETC cleared
+        subAcctCtrl?.setValue('   ', { emitEvent: false });
+      }
+      subAcctCtrl?.updateValueAndValidity({ emitEvent: false });
+    });
+  });
+}
+
+
+
+
+Change 3 — Update onSelectChange() to include Auto Ind validation
+onSelectChange(index: number): void {
+  const isSelected   = this.form.get(`pt_select_${index}`)?.value as boolean;
+  const autoIndCtrl  = this.form.get(`pt_autoInd_${index}`);
+  const betcCtrl     = this.form.get(`pt_betc_${index}`);
+  const revBetcCtrl  = this.form.get(`pt_revBetc_${index}`);
+  const subAcctCtrl  = this.form.get(`pt_subAcct_${index}`);
+
+  if (isSelected) {
+    // Auto Ind required when row selected
+    autoIndCtrl?.setValidators([
+      Validators.required,
+      Validators.pattern(/^[YN]$/),
+    ]);
+    // Sub Acct required if BETC has a value
+    const hasBetc = betcCtrl?.value?.trim().length > 0;
+    if (hasBetc) {
+      subAcctCtrl?.setValidators([
+        Validators.required,
+        Validators.maxLength(3),
+      ]);
+    }
+  } else {
+    autoIndCtrl?.clearValidators();
+    subAcctCtrl?.clearValidators();
+    subAcctCtrl?.addValidators([Validators.maxLength(3)]);
+    // Reset to spaces when deselected
+    betcCtrl?.setValue('        ', { emitEvent: false });
+    revBetcCtrl?.setValue('        ', { emitEvent: false });
+    subAcctCtrl?.setValue('   ',     { emitEvent: false });
+  }
+
+  autoIndCtrl?.updateValueAndValidity();
+  betcCtrl?.updateValueAndValidity();
+  revBetcCtrl?.updateValueAndValidity();
+  subAcctCtrl?.updateValueAndValidity();
+}
+
+
+
+Change 4 — Update buildRows() with correct lookup codes
+Update the dropdown lookupCode values to match the
+ spec:
+
+private buildRows() {
+  const headerRow: BfmField[] = [
+    { key: '__spacer__', label: 'Select',     type: 'label' },
+    { key: '__spacer__', label: 'Txn Code',   type: 'label' },
+    { key: '__spacer__', label: 'Auto Ind',   type: 'label' },
+    { key: '__spacer__', label: 'Bal Action', type: 'label' },
+    { key: '__spacer__', label: 'Ctl Tot',    type: 'label' },
+    { key: '__spacer__', label: 'BETC',       type: 'label' },
+    { key: '__spacer__', label: 'REV BETC',   type: 'label' },
+    { key: '__spacer__', label: 'Sub Acct',   type: 'label' },
+  ];
+
+  const dataRows: BfmField[][] = this.txnCodes.map((code, i) => [
+    { key: `pt_select_${i}`,    label: '',   type: 'checkbox'                                              },
+    { key: '__spacer__',        label: code, type: 'label'                                                 },
+    // Auto Ind — Required Y/N when selected
+    { key: `pt_autoInd_${i}`,   label: '',   type: 'dropdown', lookupCode: 'AUTO_IND',  required: true     },
+    // Bal Action — Not required, +/-/space, default space
+    { key: `pt_balAction_${i}`, label: '',   type: 'dropdown', lookupCode: 'BAL_ACTION'                    },
+    // Ctl Tot — Not required, from CTU lookup, default space
+    { key: `pt_ctlTot_${i}`,    label: '',   type: 'dropdown', lookupCode: 'CTU'                           },
+    // BETC — Not required, from BTC lookup
+    { key: `pt_betc_${i}`,      label: '',   type: 'dropdown', lookupCode: 'BTC'                           },
+    // REV BETC — Not required, from BTC lookup
+    { key: `pt_revBetc_${i}`,   label: '',   type: 'dropdown', lookupCode: 'BTC'                           },
+    // Sub Acct — Required if BETC present, from SAC lookup
+    { key: `pt_subAcct_${i}`,   label: '',   type: 'dropdown', lookupCode: 'SAC',       required: true     },
+  ]);
+
+  this.rows = [headerRow, ...dataRows];
+  console.log('rows in pmnt txns', this.rows);
+}
+
+
+
+Change 5 — Update initializeData() lookup codes
+Replace the lookupCodes array in initializeData() to include the correct codes from the spec:
+
+const lookupCodes = [
+  'ACA', 'MAC', 'FAL', 'FCL', 'FPL',
+  'IRC', 'CTU', 'TOF', 'SAC', 'ALC', 'DPC',
+  'AUTO_IND',   // Y or N
+  'BAL_ACTION', // +, -, space
+  'BTC',        // BETC and REV BETC values
+  'SAC',        // Sub Acct values: 049, FFP, 000, COL, 020, spaces
+];
+
+

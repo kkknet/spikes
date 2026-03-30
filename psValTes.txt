@@ -1,0 +1,170 @@
+describe('Auto Ind validation', () => {
+
+  it('should require Auto Ind for all selected rows on initial load', () => {
+    const selectedByDefault = component['selectedByDefault'];
+    component['txnCodes'].forEach((code, i) => {
+      const autoIndCtrl = component.form.get(`pt_autoInd_${i}`);
+      autoIndCtrl?.setValue('');
+      autoIndCtrl?.updateValueAndValidity();
+
+      if (selectedByDefault.includes(code)) {
+        expect(autoIndCtrl?.errors?.['required'])
+          .toBeTruthy();
+      } else {
+        expect(autoIndCtrl?.errors?.['required'])
+          .toBeFalsy();
+      }
+    });
+  });
+
+  it('should not require Auto Ind for unselected rows on initial load', () => {
+    // Rows 118, 173, 174 are NOT selected by default (indices 5, 8, 9)
+    [5, 8, 9].forEach((i) => {
+      const autoIndCtrl = component.form.get(`pt_autoInd_${i}`);
+      autoIndCtrl?.setValue('');
+      autoIndCtrl?.updateValueAndValidity();
+      expect(autoIndCtrl?.errors?.['required']).toBeFalsy();
+    });
+  });
+
+  it('should make Auto Ind required when row is selected via checkbox', () => {
+    // Row 5 (118) is unselected by default — select it
+    component.form.get('pt_select_5')?.setValue(true);
+    component.onSelectChange(5);
+
+    const autoIndCtrl = component.form.get('pt_autoInd_5');
+    autoIndCtrl?.setValue('');
+    autoIndCtrl?.updateValueAndValidity();
+
+    expect(autoIndCtrl?.errors?.['required']).toBeTruthy();
+  });
+
+  it('should remove Auto Ind required when row is deselected', () => {
+    // Row 0 (105) is selected by default — deselect it
+    component.form.get('pt_select_0')?.setValue(false);
+    component.onSelectChange(0);
+
+    const autoIndCtrl = component.form.get('pt_autoInd_0');
+    autoIndCtrl?.setValue('');
+    autoIndCtrl?.updateValueAndValidity();
+
+    expect(autoIndCtrl?.errors?.['required']).toBeFalsy();
+  });
+
+  it('should accept Y as valid Auto Ind', () => {
+    const autoIndCtrl = component.form.get('pt_autoInd_0');
+    autoIndCtrl?.setValue('Y');
+    autoIndCtrl?.updateValueAndValidity();
+    expect(autoIndCtrl?.errors).toBeNull();
+  });
+
+  it('should accept N as valid Auto Ind', () => {
+    const autoIndCtrl = component.form.get('pt_autoInd_0');
+    autoIndCtrl?.setValue('N');
+    autoIndCtrl?.updateValueAndValidity();
+    expect(autoIndCtrl?.errors).toBeNull();
+  });
+
+  it('should reject invalid values for Auto Ind', () => {
+    const autoIndCtrl = component.form.get('pt_autoInd_0');
+
+    ['X', 'y', 'n', '1', 'YES', ''].forEach((invalid) => {
+      autoIndCtrl?.setValue(invalid);
+      autoIndCtrl?.updateValueAndValidity();
+
+      const hasError =
+        autoIndCtrl?.errors?.['pattern'] ||
+        autoIndCtrl?.errors?.['required'];
+      expect(hasError).toBeTruthy();
+    });
+  });
+
+  it('should block onSubmit when Auto Ind is missing for selected row', () => {
+    const spyLog = jest.spyOn(console, 'log').mockImplementation();
+    const spyWarn = jest.spyOn(console, 'warn').mockImplementation();
+
+    // Leave Auto Ind empty for row 0
+    component.form.get('pt_autoInd_0')?.setValue('');
+    component.form.get('pt_autoInd_0')?.updateValueAndValidity();
+
+    component.onSubmit();
+
+    // Payload log should NOT be called — save was blocked
+    expect(spyLog).not.toHaveBeenCalledWith(
+      'Payment Txns payload:',
+      expect.any(Array),
+    );
+    // Warning should fire for invalid row
+    expect(spyWarn).toHaveBeenCalledWith(
+      expect.stringContaining('105'),
+      expect.stringContaining('Auto Ind'),
+      expect.any(Object),
+    );
+  });
+
+  it('should mark Auto Ind as touched on failed submit', () => {
+    component.form.get('pt_autoInd_0')?.setValue('');
+    component.form.get('pt_autoInd_0')?.updateValueAndValidity();
+
+    component.onSubmit();
+
+    expect(component.form.get('pt_autoInd_0')?.touched).toBe(true);
+  });
+
+  it('should allow submit when all selected rows have valid Auto Ind', () => {
+    const spyLog = jest.spyOn(console, 'log').mockImplementation();
+
+    // Set valid Auto Ind for all selected rows
+    component['selectedByDefault'].forEach((_, i) => {
+      component.form.get(`pt_autoInd_${i}`)?.setValue('Y');
+      component.form.get(`pt_autoInd_${i}`)?.updateValueAndValidity();
+    });
+
+    // Also fill all required subAcct
+    component['txnCodes'].forEach((_, i) => {
+      component.form.get(`pt_subAcct_${i}`)?.setValue('000');
+    });
+
+    component.onSubmit();
+
+    expect(spyLog).toHaveBeenCalledWith(
+      'Payment Txns payload:',
+      expect.any(Array),
+    );
+  });
+
+  it('should toggle Auto Ind validation correctly across multiple select/deselect cycles', () => {
+    const autoIndCtrl = component.form.get('pt_autoInd_5'); // row 118, unselected
+
+    // Cycle 1 — select
+    component.form.get('pt_select_5')?.setValue(true);
+    component.onSelectChange(5);
+    autoIndCtrl?.setValue('');
+    autoIndCtrl?.updateValueAndValidity();
+    expect(autoIndCtrl?.errors?.['required']).toBeTruthy();
+
+    // Cycle 2 — deselect
+    component.form.get('pt_select_5')?.setValue(false);
+    component.onSelectChange(5);
+    autoIndCtrl?.setValue('');
+    autoIndCtrl?.updateValueAndValidity();
+    expect(autoIndCtrl?.errors?.['required']).toBeFalsy();
+
+    // Cycle 3 — select again
+    component.form.get('pt_select_5')?.setValue(true);
+    component.onSelectChange(5);
+    autoIndCtrl?.setValue('');
+    autoIndCtrl?.updateValueAndValidity();
+    expect(autoIndCtrl?.errors?.['required']).toBeTruthy();
+  });
+
+  it('should clear Auto Ind value when row is deselected', () => {
+    // Row 0 selected — set a value then deselect
+    component.form.get('pt_autoInd_0')?.setValue('Y');
+    component.form.get('pt_select_0')?.setValue(false);
+    component.onSelectChange(0);
+
+    expect(component.form.get('pt_autoInd_0')?.value).toBe('');
+  });
+
+});

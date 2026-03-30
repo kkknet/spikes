@@ -1,0 +1,33 @@
+<ng-container *ngIf="field.type === 'dropdown' && field.key !== '__spacer__'">
+  <select
+    class="fsa-select"
+    [class.fsa-select--error]="form.get(field.key)?.invalid && form.get(field.key)?.touched"
+    [formControlName]="field.key"
+    [id]="'field_' + field.key"
+  >
+    <option value=""></option>
+    <option
+      *ngFor="let opt of getOptions(field.lookupCode)"
+      [value]="opt"
+    >{{ opt }}</option>
+  </select>
+
+  <!-- Required error -->
+  <div
+    class="fsa-error-message"
+    *ngIf="form.get(field.key)?.errors?.['required']
+           && form.get(field.key)?.touched"
+  >
+    Required
+  </div>
+
+  <!-- Pattern error for Auto Ind -->
+  <div
+    class="fsa-error-message"
+    *ngIf="form.get(field.key)?.errors?.['pattern']
+           && form.get(field.key)?.touched"
+  >
+    Must be Y or N
+  </div>
+
+</ng-container>

@@ -1,0 +1,42 @@
+// Constrain the Other multiselect box
+app-commodity {
+  ng-select.ng-select-multiple {
+    min-width: 200px;
+
+    .ng-select-container {
+      min-height: 36px;
+      max-height: 72px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .ng-value-container {
+      flex-wrap: wrap;
+      gap: 2px;
+      padding: 4px 8px;
+    }
+
+    .ng-value {
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+
+    // Dropdown panel — open upward if near bottom
+    .ng-dropdown-panel {
+      z-index: 1050;
+      position: absolute;
+      width: 250px;
+      max-height: 200px;
+      overflow-y: auto;
+      
+      .ng-option {
+        white-space: normal;
+        font-size: 12px;
+        padding: 6px 8px;
+      }
+    }
+  }
+}

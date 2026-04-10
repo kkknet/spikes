@@ -1,45 +1,68 @@
 app-commodity {
-  // Remove ALL scroll from the select container itself
   ng-select.ng-select-multiple {
-    .ng-select-container {
-      height: auto !important;
-      max-height: none !important;
-      overflow: visible !important;
-    }
 
-    .ng-value-container {
-      flex-wrap: wrap;
-      overflow: visible !important;
-      padding: 4px 8px;
-      gap: 2px;
-    }
-
-    .ng-value {
-      font-size: 11px;
-      max-width: 180px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    // Only the DROPDOWN PANEL gets scroll, nothing else
+    // Fix dropdown border
     .ng-dropdown-panel {
-      position: absolute !important;
-      z-index: 1050;
-      width: 260px;
-      
+      width: 300px;
+      border: 1px solid #aeb0b5 !important;  // FSA border color
+      border-top: none !important;            // No double border with container
+      border-radius: 0 0 4px 4px !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+      background-color: #fff !important;
+
       .ng-dropdown-panel-items {
         max-height: 150px !important;
         overflow-y: auto !important;
-        overflow-x: hidden !important;
-      }
 
-      .ng-option {
-        font-size: 12px;
-        padding: 6px 8px;
-        white-space: normal;
-        word-break: break-word;
+        .ng-option {
+          white-space: normal !important;
+          word-break: break-word !important;
+          overflow: visible !important;
+          text-overflow: unset !important;
+          line-height: 1.4;
+          padding: 6px 8px;
+          font-size: 12px;
+          border-bottom: 1px solid #f1f1f1;  // subtle row separator
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          &.ng-option-marked {
+            background-color: #e1f3f8 !important;  // hover
+          }
+
+          &.ng-option-selected {
+            background-color: #d6e8ea !important;  // selected
+            font-weight: 600;
+          }
+        }
       }
+    }
+
+    // Fix container border to match
+    .ng-select-container {
+      border: 1px solid #aeb0b5 !important;
+      border-radius: 4px !important;
+
+      &:focus-within {
+        border-color: #0071bc !important;  // FSA focus blue
+        outline: 2px solid #0071bc !important;
+        outline-offset: 0;
+      }
+    }
+
+    // Fix selected value tags
+    .ng-value {
+      white-space: normal !important;
+      word-break: break-word !important;
+      max-width: 100% !important;
+      text-overflow: unset !important;
+      background-color: #e1f3f8 !important;
+      border: 1px solid #aeb0b5 !important;
+      border-radius: 2px !important;
+      font-size: 11px;
+      padding: 2px 4px;
     }
   }
 }

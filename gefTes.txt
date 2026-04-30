@@ -1,86 +1,132 @@
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import { TestBed } from '@angular/core/testing';
+import { FormBuilder, Validators } from '@angular/forms';
+import { YourComponent } from './your.component'; // adjust path
 
-import java.util.List;
-import java.util.Map;
+describe('YourComponent - buildForm()', () => {
+  let component: YourComponent;
+  let fb: FormBuilder;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [FormBuilder],
+      declarations: [YourComponent], // or imports if standalone
+    });
 
-class GlobalExceptionHandlerTest {
+    const fixture = TestBed.createComponent(YourComponent);
+    component = fixture.componentInstance;
+    fb = TestBed.inject(FormBuilder);
+  });
 
-    private final GlobalExceptionHandler handler = new GlobalExceptiontionHandler();
+  // ─── yr_select ───────────────────────────────────────────
 
-    @Test
-    void handleValidationExceptions_shouldReturnBadRequestWithFieldErrorsMap() {
-        // Arrange
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        BindingResult bindingResult = mock(BindingResult.class);
+  it('should set yr_select_0 to true when first year is selected', () => {
+    component.programYears = [{ selected: true, status: 'A' }];
+    component.buildForm();
+    expect(component.form.get('yr_select_0')?.value).toBe(true);
+  });
 
-        List<FieldError> fieldErrors = List.of(
-                new FieldError("obj", "firstName", "First name is required"),
-                new FieldError("obj", "age", "Age must be >= 18")
-        );
+  it('should set yr_select_0 to false when first year is not selected', () => {
+    component.programYears = [{ selected: false, status: 'A' }];
+    component.buildForm();
+    expect(component.form.get('yr_select_0')?.value).toBe(false);
+  });
 
-        when(ex.getBindingResult()).thenReturn(bindingResult);
-        when(bindingResult.getFieldErrors()).thenReturn(fieldErrors);
+  // ─── yr_status: y.status truthy branch ──────────────────
 
-        // Act
-        ResponseEntity<Map<String, String>> response = handler.handleValidationExceptions(ex);
+  it('should use y.status when status is "A"', () => {
+    component.programYears = [{ selected: true, status: 'A' }];
+    component.buildForm();
+    expect(component.form.get('yr_status_0')?.value).toBe('A');
+  });
 
-        // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
-        assertEquals("First name is required", response.getBody().get("firstName"));
-        assertEquals("Age must be >= 18", response.getBody().get("age"));
-    }
+  it('should use y.status when status is "I"', () => {
+    component.programYears = [{ selected: false, status: 'I' }];
+    component.buildForm();
+    expect(component.form.get('yr_status_0')?.value).toBe('I');
+  });
 
-    @Test
-    void handleValidationExceptions_shouldReturnBadRequestWithEmptyMapWhenNoErrors() {
-        // Arrange
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        BindingResult bindingResult = mock(BindingResult.class);
+  // ─── yr_status: y.status falsy branch (|| 'I') ──────────
 
-        when(ex.getBindingResult()).thenReturn(bindingResult);
-        when(bindingResult.getFieldErrors()).thenReturn(List.of());
+  it('should default status to "I" when y.status is null', () => {
+    component.programYears = [{ selected: false, status: null }];
+    component.buildForm();
+    expect(component.form.get('yr_status_0')?.value).toBe('I');
+  });
 
-        // Act
-        ResponseEntity<Map<String, String>> response = handler.handleValidationExceptions(ex);
+  it('should default status to "I" when y.status is undefined', () => {
+    component.programYears = [{ selected: false, status: undefined }];
+    component.buildForm();
+    expect(component.form.get('yr_status_0')?.value).toBe('I');
+  });
 
-        // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().isEmpty());
-    }
+  it('should default status to "I" when y.status is empty string', () => {
+    component.programYears = [{ selected: false, status: '' }];
+    component.buildForm();
+    expect(component.form.get('yr_status_0')?.value).toBe('I');
+  });
 
-    @Test
-    void handlePfrsUiDataAccessException_shouldReturnInternalServerErrorWithMessage() {
-        // Arrange
-        Throwable t = new RuntimeException("DB connection failed");
+  // ─── yr_status validators: y.selected true branch ───────
 
-        // Act
-        ResponseEntity<Object> response = handler.handlePfrsUiDataAccessException(t);
+  it('should apply required and pattern validators when selected is true', () => {
+    component.programYears = [{ selected: true, status: 'A' }];
+    component.buildForm();
 
-        // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("DB connection failed", response.getBody());
-    }
+    const control = component.form.get('yr_status_0');
 
-    @Test
-    void handlePfrsUiDataAccessException_shouldReturnInternalServerErrorWithNullBodyIfMessageNull() {
-        // Arrange
-        Throwable t = new RuntimeException((String) null);
+    // Valid value passes
+    control?.setValue('A');
+    expect(control?.valid).toBe(true);
 
-        // Act
-        ResponseEntity<Object> response = handler.handlePfrsUiDataAccessException(t);
+    control?.setValue('I');
+    expect(control?.valid).toBe(true);
 
-        // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-}
+    // Required: empty fails
+    control?.setValue('');
+    expect(control?.hasError('required')).toBe(true);
+
+    // Pattern: invalid value fails
+    control?.setValue('X');
+    expect(control?.hasError('pattern')).toBe(true);
+  });
+
+  // ─── yr_status validators: y.selected false branch ──────
+
+  it('should apply no validators when selected is false', () => {
+    component.programYears = [{ selected: false, status: 'I' }];
+    component.buildForm();
+
+    const control = component.form.get('yr_status_0');
+
+    // No validators — any value should be valid
+    control?.setValue('');
+    expect(control?.valid).toBe(true);
+
+    control?.setValue('X');
+    expect(control?.valid).toBe(true);
+  });
+
+  // ─── Multiple years ──────────────────────────────────────
+
+  it('should build controls for all programYears with correct indexes', () => {
+    component.programYears = [
+      { selected: true,  status: 'A' },
+      { selected: false, status: ''  },
+      { selected: true,  status: null },
+    ];
+    component.buildForm();
+
+    expect(component.form.get('yr_select_0')?.value).toBe(true);
+    expect(component.form.get('yr_select_1')?.value).toBe(false);
+    expect(component.form.get('yr_select_2')?.value).toBe(true);
+
+    expect(component.form.get('yr_status_0')?.value).toBe('A');
+    expect(component.form.get('yr_status_1')?.value).toBe('I'); // fallback
+    expect(component.form.get('yr_status_2')?.value).toBe('I'); // null fallback
+  });
+
+  it('should build an empty form group when programYears is empty', () => {
+    component.programYears = [];
+    component.buildForm();
+    expect(Object.keys(component.form.controls).length).toBe(0);
+  });
+});
